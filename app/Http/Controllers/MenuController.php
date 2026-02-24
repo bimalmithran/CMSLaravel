@@ -19,7 +19,7 @@ class MenuController extends Controller
             $query->orWhereHas('parent', function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%");
             });
-        })->paginate(10);
+        })->orderBy('id', 'desc')->paginate(10);
 
         return response()->json(['success' => true, 'data' => $menus]);
     }
@@ -27,7 +27,7 @@ class MenuController extends Controller
     public function list(Request $request): JsonResponse
     {
         // Logic to list all menus without pagination
-        $menus = Menu::with('parent')->get();
+        $menus = Menu::with('parent')->orderBy('position')->get();
 
         return response()->json(['success' => true, 'data' => $menus]);
     }

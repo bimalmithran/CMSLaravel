@@ -4,7 +4,7 @@ import {
     EllipsisVerticalIcon,
     ViewIcon,
 } from 'lucide-react';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import {
     DropdownMenu,
@@ -28,6 +28,12 @@ import {
     DialogTrigger,
 } from '../../../components/ui/dialog';
 import { Input } from '../../../components/ui/input';
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupButton,
+    InputGroupInput,
+} from '../../../components/ui/input-group';
 import { Label } from '../../../components/ui/label';
 import { apiFetch } from '../lib/api';
 
@@ -35,7 +41,7 @@ type Category = {
     id: number;
     name: string;
     slug: string;
-    description: string | null;
+    description: string;
     parent_id: number | null; // <--- optional parent pointer
     order: number;
     is_active: boolean;
@@ -57,22 +63,16 @@ export function CategoriesPage() {
     const [error, setError] = useState<string | null>(null);
     const [search, setSearch] = useState('');
 
-    const filtered = useMemo(() => {
-        const q = search.trim().toLowerCase();
-        if (!q) return items;
-        return items.filter(
-            (c) =>
-                c.name.toLowerCase().includes(q) ||
-                c.slug.toLowerCase().includes(q),
-        );
-    }, [items, search]);
+    // currently selected items for view/edit dialogs
+    const [viewCategory, setViewCategory] = React.useState<Category | null>(null);
+    const [editCategory, setEditCategory] = React.useState<Category | null>(null);
 
     async function load() {
         setLoading(true);
         setError(null);
         try {
             const res = await apiFetch<Paginated<Category>>(
-                '/api/v1/admin/categories',
+                '/api/v1/admin/categories?search=' + encodeURIComponent(search),
             );
             if (!res.success) {
                 setError(res.message || 'Failed to load categories');
@@ -112,6 +112,24 @@ export function CategoriesPage() {
         await load();
     }
 
+    async function updateCategory(
+        id: number,
+        payload: {
+            name: string;
+            description?: string;
+            parent_id?: number | null;
+            order?: number;
+            is_active?: boolean;
+        },
+    ) {
+        const res = await apiFetch<Category>(`/api/v1/admin/categories/${id}`, {
+            method: 'PUT',
+            json: payload,
+        });
+        if (!res.success) throw new Error(res.message || 'Update failed');
+        await load();
+    }
+
     async function deleteCategory(id: number) {
         if (!confirm('Delete this category?')) return;
         const res = await apiFetch<unknown>(`/api/v1/admin/categories/${id}`, {
@@ -135,11 +153,27 @@ export function CategoriesPage() {
                 </div>
 
                 <div className="flex gap-2">
-                    <Input
-                        placeholder="Search…"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                    />
+                    <InputGroup>
+                        <InputGroupInput
+                            placeholder="Type to search..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            onKeyDown={async (e) => {
+                                if (e.key === 'Enter') {
+                                    await void load();
+                                }
+                            }}
+                        />
+                        <InputGroupAddon align="inline-end">
+                            <InputGroupButton
+                                variant="secondary"
+                                className="cursor-pointer"
+                                onClick={async () => await void load()}
+                            >
+                                Search
+                            </InputGroupButton>
+                        </InputGroupAddon>
+                    </InputGroup>
                     <CreateCategoryDialog
                         onCreate={createCategory}
                         parents={parents}
@@ -158,7 +192,7 @@ export function CategoriesPage() {
                         </div>
                     ) : error ? (
                         <div className="text-sm text-destructive">{error}</div>
-                    ) : filtered.length === 0 ? (
+                    ) : items.length === 0 ? (
                         <div className="text-sm text-muted-foreground">
                             No categories.
                         </div>
@@ -185,7 +219,7 @@ export function CategoriesPage() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {filtered.map((c) => (
+                                    {items.map((c) => (
                                         <tr key={c.id} className="border-b">
                                             <td className="py-2">{c.name}</td>
                                             <td className="py-2 font-mono text-xs">
@@ -208,11 +242,21 @@ export function CategoriesPage() {
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent>
-                                                        <DropdownMenuItem className="cursor-pointer">
+                                                        <DropdownMenuItem
+                                                            className="cursor-pointer"
+                                                            onClick={() =>
+                                                                setViewCategory(c)
+                                                            }
+                                                        >
                                                             <ViewIcon />
                                                             View
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem className="cursor-pointer">
+                                                        <DropdownMenuItem
+                                                            className="cursor-pointer"
+                                                            onClick={() =>
+                                                                setEditCategory(c)
+                                                            }
+                                                        >
                                                             <EditIcon />
                                                             Edit
                                                         </DropdownMenuItem>
@@ -240,6 +284,29 @@ export function CategoriesPage() {
                     )}
                 </CardContent>
             </Card>
+
+            
+            {/* dialogs triggered by table actions */}
+            {viewCategory && (
+                <ViewCategoryDialog
+                    category={viewCategory}
+                    open={!!viewCategory}
+                    onOpenChange={(o) => {
+                        if (!o) setViewCategory(null);
+                    }}
+                />
+            )}
+            {editCategory && (
+                <EditCategoryDialog
+                    category={editCategory}
+                    parents={parents}
+                    open={!!editCategory}
+                    onOpenChange={(o) => {
+                        if (!o) setEditCategory(null);
+                    }}
+                    onUpdate={updateCategory}
+                />
+            )}
         </div>
     );
 }
@@ -378,6 +445,208 @@ function CreateCategoryDialog({
                             Cancel
                         </Button>
                         <Button disabled={saving} className="cursor-pointer">
+                            {saving ? 'Saving…' : 'Save'}
+                        </Button>
+                    </div>
+                </form>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+// view-only dialog
+function ViewCategoryDialog({
+    category,
+    open,
+    onOpenChange,
+}: {
+    category: Category;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+}) {
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>View Category</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                    <div>
+                        <strong>Name:</strong> {category.name}
+                    </div>
+                    <div>
+                        <strong>Slug:</strong> {category.slug}
+                    </div>
+                    <div>
+                        <strong>Description:</strong> {category.description || '—'}
+                    </div>
+                    <div>
+                        <strong>Parent:</strong>{' '}
+                        {category.parent?.name ?? '(none)'}
+                    </div>
+                    <div>
+                        <strong>Order:</strong> {category.order}
+                    </div>
+                    <div>
+                        <strong>Active:</strong> {category.is_active ? 'Yes' : 'No'}
+                    </div>
+                </div>
+                <div className="flex justify-end mt-4">
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>
+                        Close
+                    </Button>
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+// edit dialog
+function EditCategoryDialog({
+    category,
+    parents,
+    open,
+    onOpenChange,
+    onUpdate,
+}: {
+    category: Category;
+    parents: Category[];
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    onUpdate: (
+        id: number,
+        data: {
+            name: string;
+            description?: string;
+            parent_id?: number | null;
+            order?: number;
+            is_active?: boolean;
+        },
+    ) => Promise<void>;
+}) {
+    const [name, setName] = useState(category.name);
+    const [description, setDescription] = useState(category.description);
+    const [parentId, setParentId] = useState<number | ''>(
+        category.parent_id === null ? '' : category.parent_id,
+    );
+    const [order, setOrder] = useState<number>(category.order);
+    const [isActive, setIsActive] = useState(category.is_active);
+    const [saving, setSaving] = useState(false);
+    const [err, setErr] = useState<string | null>(null);
+
+    // reset when category changes (e.g. opening a different item)
+    useEffect(() => {
+        setName(category.name);
+        setDescription(category.description);
+        setParentId(category.parent_id === null ? '' : category.parent_id);
+        setOrder(category.order);
+        setIsActive(category.is_active);
+        setErr(null);
+    }, [category]);
+
+    async function submit(e: React.SubmitEvent) {
+        e.preventDefault();
+        setSaving(true);
+        setErr(null);
+        try {
+            await onUpdate(category.id, {
+                name,
+                description: description.trim() ? description : undefined,
+                parent_id: parentId === '' ? null : parentId,
+                order,
+                is_active: isActive,
+            });
+            onOpenChange(false);
+        } catch (e) {
+            setErr(e instanceof Error ? e.message : 'Update failed');
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Edit Menu</DialogTitle>
+                </DialogHeader>
+                <form className="space-y-4" onSubmit={submit}>
+                    <div className="space-y-2">
+                        <Label htmlFor="edit-name">Name</Label>
+                        <Input
+                            id="edit-name"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            required
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="edit-desc">Description</Label>
+                        <Input
+                            id="edit-desc"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="edit-parent">Parent Category</Label>
+                        <select
+                            id="edit-parent"
+                            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                            value={parentId}
+                            onChange={(e) => {
+                                const v = e.target.value;
+                                setParentId(v === '' ? '' : Number(v));
+                            }}
+                        >
+                            <option value="">(none)</option>
+                            {parents.map((p) => (
+                                <option key={p.id} value={p.id}>
+                                    {p.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-order">Order</Label>
+                            <Input
+                                id="edit-order"
+                                type="number"
+                                value={String(order)}
+                                onChange={(e) =>
+                                    setOrder(Number(e.target.value))
+                                }
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-active">Active (1/0)</Label>
+                            <Input
+                                id="edit-active"
+                                type="number"
+                                value={isActive ? '1' : '0'}
+                                onChange={(e) =>
+                                    setIsActive(e.target.value !== '0')
+                                }
+                            />
+                        </div>
+                    </div>
+
+                    {err ? (
+                        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                            {err}
+                        </div>
+                    ) : null}
+
+                    <div className="flex justify-end gap-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => onOpenChange(false)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button disabled={saving}>
                             {saving ? 'Saving…' : 'Save'}
                         </Button>
                     </div>

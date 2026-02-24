@@ -13,7 +13,17 @@ class CategoryController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $categories = Category::with('parent:id,name')->orderBy('order')->orderBy('name')->paginate(20);
+        $search = $request->query('search');
+
+        $categories = Category::with('parent:id,name')
+            ->when($search, function ($query, $search) {
+                $query->where('name', 'like', "%{$search}%");
+                $query->orWhere('description', 'like', "%{$search}%");
+                $query->orWhereHas('parent', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy('order')->orderBy('name')->paginate(20);
 
         return response()->json(['success' => true, 'data' => $categories]);
     }
@@ -103,4 +113,3 @@ class CategoryController extends Controller
         return response()->json(['success' => true]);
     }
 }
-

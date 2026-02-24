@@ -547,7 +547,7 @@ function EditMenuDialog({
         setErr(null);
     }, [menu]);
 
-    async function submit(e: React.FormEvent) {
+    async function submit(e: React.SubmitEvent) {
         e.preventDefault();
         setSaving(true);
         setErr(null);
