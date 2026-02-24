@@ -3,13 +3,14 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { AdminLayout } from './layout/AdminLayout'
+import { AdminUsersPage } from './pages/AdminUsers'
 import { CategoriesPage } from './pages/Categories'
+import { CustomersPage } from './pages/Customers'
 import { DashboardPage } from './pages/Dashboard'
 import { LoginPage } from './pages/Login'
+import { MenuPage } from './pages/Menus'
 import { OrdersPage } from './pages/Orders'
 import { ProductsPage } from './pages/Products'
-import { AdminUsersPage } from './pages/AdminUsers'
-import { CustomersPage } from './pages/Customers'
 
 export function AdminApp() {
   return (
@@ -20,6 +21,7 @@ export function AdminApp() {
         <Route element={<ProtectedRoute />}>
           <Route element={<AdminLayout />}>
             <Route path="/" element={<DashboardPage />} />
+            <Route path='/menus' element={<MenuPage />} />
             <Route path="/categories" element={<CategoriesPage />} />
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/orders" element={<OrdersPage />} />

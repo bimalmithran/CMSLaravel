@@ -1,5 +1,18 @@
+import {
+    DeleteIcon,
+    EditIcon,
+    EllipsisVerticalIcon,
+    ViewIcon,
+} from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
 
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Button } from '../../../components/ui/button';
 import {
     Card,
@@ -127,7 +140,10 @@ export function CategoriesPage() {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                     />
-                    <CreateCategoryDialog onCreate={createCategory} parents={parents} />
+                    <CreateCategoryDialog
+                        onCreate={createCategory}
+                        parents={parents}
+                    />
                 </div>
             </div>
 
@@ -180,15 +196,41 @@ export function CategoriesPage() {
                                                 {c.is_active ? 'Yes' : 'No'}
                                             </td>
                                             <td className="py-2 text-right">
-                                                <Button
-                                                    variant="destructive"
-                                                    size="sm"
-                                                    onClick={() =>
-                                                        deleteCategory(c.id)
-                                                    }
-                                                >
-                                                    Delete
-                                                </Button>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger
+                                                        asChild
+                                                    >
+                                                        <Button
+                                                            variant="outline"
+                                                            className="cursor-pointer"
+                                                        >
+                                                            <EllipsisVerticalIcon />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent>
+                                                        <DropdownMenuItem className="cursor-pointer">
+                                                            <ViewIcon />
+                                                            View
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem className="cursor-pointer">
+                                                            <EditIcon />
+                                                            Edit
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem
+                                                            variant="destructive"
+                                                            className="cursor-pointer"
+                                                            onClick={() =>
+                                                                deleteCategory(
+                                                                    c.id,
+                                                                )
+                                                            }
+                                                        >
+                                                            <DeleteIcon />
+                                                            Delete
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
                                             </td>
                                         </tr>
                                     ))}
@@ -224,7 +266,7 @@ function CreateCategoryDialog({
     const [saving, setSaving] = useState(false);
     const [err, setErr] = useState<string | null>(null);
 
-    async function submit(e: React.FormEvent) {
+    async function submit(e: React.SubmitEvent) {
         e.preventDefault();
         setSaving(true);
         setErr(null);
@@ -252,7 +294,7 @@ function CreateCategoryDialog({
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button>Create</Button>
+                <Button className="cursor-pointer">Create</Button>
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
@@ -330,11 +372,12 @@ function CreateCategoryDialog({
                         <Button
                             type="button"
                             variant="outline"
+                            className="cursor-pointer"
                             onClick={() => setOpen(false)}
                         >
                             Cancel
                         </Button>
-                        <Button disabled={saving}>
+                        <Button disabled={saving} className="cursor-pointer">
                             {saving ? 'Saving…' : 'Save'}
                         </Button>
                     </div>

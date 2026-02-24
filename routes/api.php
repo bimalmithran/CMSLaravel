@@ -1,21 +1,21 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\Api\Admin\AdminUserController;
+use App\Http\Controllers\Api\Admin\AuthController as AdminAuthController;
+use App\Http\Controllers\Api\Admin\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Api\Admin\CustomerController as AdminCustomerController;
+use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
+use App\Http\Controllers\Api\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Api\AuthController as CustomerAuthController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\WishlistController;
-use App\Http\Controllers\Api\Admin\AuthController as AdminAuthController;
-use App\Http\Controllers\Api\Admin\CategoryController as AdminCategoryController;
-use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
-use App\Http\Controllers\Api\Admin\ProductController as AdminProductController;
-use App\Http\Controllers\Api\Admin\AdminUserController;
-use App\Http\Controllers\Api\Admin\CustomerController as AdminCustomerController;
+use App\Http\Controllers\MenuController;
+use Illuminate\Support\Facades\Route;
 
-Route::get('/health', fn () => response()->json(['status' => 'ok']));
+Route::get('/health', fn() => response()->json(['status' => 'ok']));
 
 Route::prefix('v1')->group(function () {
     // Catalog (public)
@@ -71,6 +71,8 @@ Route::prefix('v1')->group(function () {
             Route::get('/categories/list', [AdminCategoryController::class, 'list']);
             Route::apiResource('categories', AdminCategoryController::class);
             Route::apiResource('products', AdminProductController::class);
+            Route::get('/menus/list', [MenuController::class, 'list']);
+            Route::apiResource('menus', MenuController::class);
 
             // Admin users & customers
             Route::apiResource('admin-users', AdminUserController::class)->except(['edit', 'create']);
@@ -84,4 +86,3 @@ Route::prefix('v1')->group(function () {
         });
     });
 });
-
