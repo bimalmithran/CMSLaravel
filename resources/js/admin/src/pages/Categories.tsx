@@ -20,6 +20,7 @@ import {
     CardHeader,
     CardTitle,
 } from '../../../components/ui/card';
+import { Checkbox } from '../../../components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
@@ -64,8 +65,12 @@ export function CategoriesPage() {
     const [search, setSearch] = useState('');
 
     // currently selected items for view/edit dialogs
-    const [viewCategory, setViewCategory] = React.useState<Category | null>(null);
-    const [editCategory, setEditCategory] = React.useState<Category | null>(null);
+    const [viewCategory, setViewCategory] = React.useState<Category | null>(
+        null,
+    );
+    const [editCategory, setEditCategory] = React.useState<Category | null>(
+        null,
+    );
 
     async function load() {
         setLoading(true);
@@ -245,7 +250,9 @@ export function CategoriesPage() {
                                                         <DropdownMenuItem
                                                             className="cursor-pointer"
                                                             onClick={() =>
-                                                                setViewCategory(c)
+                                                                setViewCategory(
+                                                                    c,
+                                                                )
                                                             }
                                                         >
                                                             <ViewIcon />
@@ -254,7 +261,9 @@ export function CategoriesPage() {
                                                         <DropdownMenuItem
                                                             className="cursor-pointer"
                                                             onClick={() =>
-                                                                setEditCategory(c)
+                                                                setEditCategory(
+                                                                    c,
+                                                                )
                                                             }
                                                         >
                                                             <EditIcon />
@@ -285,7 +294,6 @@ export function CategoriesPage() {
                 </CardContent>
             </Card>
 
-            
             {/* dialogs triggered by table actions */}
             {viewCategory && (
                 <ViewCategoryDialog
@@ -417,14 +425,11 @@ function CreateCategoryDialog({
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="cat-active">Active (1/0)</Label>
-                            <Input
+                            <Label htmlFor="cat-active">Active</Label>
+                            <Checkbox
                                 id="cat-active"
-                                type="number"
-                                value={isActive ? '1' : '0'}
-                                onChange={(e) =>
-                                    setIsActive(e.target.value !== '0')
-                                }
+                                checked={isActive}
+                                onCheckedChange={(v) => setIsActive(!!v)}
                             />
                         </div>
                     </div>
@@ -478,7 +483,8 @@ function ViewCategoryDialog({
                         <strong>Slug:</strong> {category.slug}
                     </div>
                     <div>
-                        <strong>Description:</strong> {category.description || '—'}
+                        <strong>Description:</strong>{' '}
+                        {category.description || '—'}
                     </div>
                     <div>
                         <strong>Parent:</strong>{' '}
@@ -488,11 +494,15 @@ function ViewCategoryDialog({
                         <strong>Order:</strong> {category.order}
                     </div>
                     <div>
-                        <strong>Active:</strong> {category.is_active ? 'Yes' : 'No'}
+                        <strong>Active:</strong>{' '}
+                        {category.is_active ? 'Yes' : 'No'}
                     </div>
                 </div>
-                <div className="flex justify-end mt-4">
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>
+                <div className="mt-4 flex justify-end">
+                    <Button
+                        variant="outline"
+                        onClick={() => onOpenChange(false)}
+                    >
                         Close
                     </Button>
                 </div>
@@ -620,14 +630,11 @@ function EditCategoryDialog({
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="edit-active">Active (1/0)</Label>
-                            <Input
+                            <Label htmlFor="edit-active">Active</Label>
+                            <Checkbox
                                 id="edit-active"
-                                type="number"
-                                value={isActive ? '1' : '0'}
-                                onChange={(e) =>
-                                    setIsActive(e.target.value !== '0')
-                                }
+                                checked={isActive}
+                                onCheckedChange={(v) => setIsActive(!!v)}
                             />
                         </div>
                     </div>

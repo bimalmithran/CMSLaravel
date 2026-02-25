@@ -1,25 +1,7 @@
-import {
-    DeleteIcon,
-    EditIcon,
-    EllipsisVerticalIcon,
-    ViewIcon,
-} from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Button } from '../../../components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from '../../../components/ui/card';
+import { Checkbox } from '../../../components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
@@ -28,14 +10,9 @@ import {
     DialogTrigger,
 } from '../../../components/ui/dialog';
 import { Input } from '../../../components/ui/input';
-import {
-    InputGroup,
-    InputGroupAddon,
-    InputGroupButton,
-    InputGroupInput,
-} from '../../../components/ui/input-group';
-import { Label } from '../../../components/ui/label';
 
+import { Label } from '../../../components/ui/label';
+import { DataTable, type DataTableColumn } from '../components/DataTable';
 import { apiFetch } from '../lib/api';
 
 type MenuItem = {
@@ -56,6 +33,36 @@ type PaginatedResponse<T> = {
     total: number;
 };
 
+const menuColumns: DataTableColumn<MenuItem>[] = [
+    {
+        key: 'index',
+        label: '#',
+        render: (_value, _item, index, currentPage) =>
+            (currentPage - 1) * 10 + index + 1,
+    },
+    {
+        key: 'name',
+        label: 'Name',
+    },
+    {
+        key: 'parent',
+        label: 'Parent',
+        render: (value: unknown) => {
+            const parent = value as MenuItem | null;
+            return parent?.name ?? '(none)';
+        },
+    },
+    {
+        key: 'position',
+        label: 'Position',
+    },
+    {
+        key: 'is_active',
+        label: 'Active',
+        render: (value: unknown) => (value as boolean) ? 'Yes' : 'No',
+    },
+];
+
 export function MenuPage() {
     const [items, setItems] = React.useState<MenuItem[]>([]);
     const [parents, setParents] = React.useState<MenuItem[]>([]);
@@ -63,35 +70,40 @@ export function MenuPage() {
     const [error, setError] = React.useState<string | null>(null);
     const [search, setSearch] = React.useState('');
 
+    // pagination state
+    const [currentPage, setCurrentPage] = React.useState(1);
+    const [lastPage, setLastPage] = React.useState(1);
+
     // currently selected items for view/edit dialogs
     const [viewMenu, setViewMenu] = React.useState<MenuItem | null>(null);
     const [editMenu, setEditMenu] = React.useState<MenuItem | null>(null);
 
-    useEffect(() => {
-        void load();
-        void loadParents();
-    }, []);
-
-    async function load() {
+    const load = React.useCallback(async (page: number = 1) => {
         setLoading(true);
         setError(null);
         try {
+            const params = new URLSearchParams();
+            params.append('page', String(page));
+            if (search) params.append('search', search);
+
             const res = await apiFetch<PaginatedResponse<MenuItem>>(
-                '/api/v1/admin/menus?search=' + encodeURIComponent(search),
+                '/api/v1/admin/menus?' + params.toString(),
             );
             if (!res.success) {
                 setError(res.message || 'Failed to load menus');
                 return;
             }
             setItems(res.data.data);
+            setCurrentPage(res.data.current_page);
+            setLastPage(res.data.last_page);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Unknown error');
         } finally {
             setLoading(false);
         }
-    }
+    }, [search]);
 
-    async function loadParents() {
+    const loadParents = React.useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
@@ -106,7 +118,12 @@ export function MenuPage() {
         } finally {
             setLoading(false);
         }
-    }
+    }, []);
+
+    useEffect(() => {
+        load().catch(console.error);
+        loadParents().catch(console.error);
+    }, [load, loadParents]);
 
     async function createMenu(payload: {
         name: string;
@@ -138,12 +155,12 @@ export function MenuPage() {
             json: payload,
         });
         if (!res.success) throw new Error(res.message || 'Update failed');
-        await load();
+        await load(currentPage);
     }
 
-    async function deleteMenu(id: number) {
+    async function deleteMenu(item: MenuItem) {
         if (!confirm('Delete this menu item?')) return;
-        const res = await apiFetch<unknown>(`/api/v1/admin/menus/${id}`, {
+        const res = await apiFetch<unknown>(`/api/v1/admin/menus/${item.id}`, {
             method: 'DELETE',
         });
         if (!res.success) {
@@ -155,139 +172,32 @@ export function MenuPage() {
 
     return (
         <div className="space-y-4">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center justify-between">
                 <div>
                     <div className="text-lg font-semibold">Menus</div>
                     <div className="text-sm text-muted-foreground">
                         Manage product menus.
                     </div>
                 </div>
-
-                <div className="flex gap-2">
-                    <InputGroup>
-                        <InputGroupInput
-                            placeholder="Type to search..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            onKeyDown={async (e) => {
-                                if (e.key === 'Enter') {
-                                    await void load();
-                                }
-                            }}
-                        />
-                        <InputGroupAddon align="inline-end">
-                            <InputGroupButton
-                                variant="secondary"
-                                className="cursor-pointer"
-                                onClick={async () => await void load()}
-                            >
-                                Search
-                            </InputGroupButton>
-                        </InputGroupAddon>
-                    </InputGroup>
-                    <CreateMenuDialog onCreate={createMenu} parents={parents} />
-                </div>
+                <CreateMenuDialog onCreate={createMenu} parents={parents} />
             </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>List</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    {loading ? (
-                        <div className="text-sm text-muted-foreground">
-                            Loading…
-                        </div>
-                    ) : error ? (
-                        <div className="text-sm text-destructive">{error}</div>
-                    ) : items.length === 0 ? (
-                        <div className="text-sm text-muted-foreground">
-                            No menus.
-                        </div>
-                    ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full border-collapse text-sm">
-                                <thead>
-                                    <tr className="border-b">
-                                        <th className="py-2 text-left font-medium">
-                                            Name
-                                        </th>
-                                        <th className="py-2 text-left font-medium">
-                                            Parent
-                                        </th>
-                                        <th className="py-2 text-left font-medium">
-                                            Position
-                                        </th>
-                                        <th className="py-2 text-left font-medium">
-                                            Active
-                                        </th>
-                                        <th className="py-2 text-right font-medium">
-                                            Actions
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {items.map((c) => (
-                                        <tr key={c.id} className="border-b">
-                                            <td className="py-2">{c.name}</td>
-                                            <td className="py-2 font-mono text-xs">
-                                                {c.parent?.name ?? '(none)'}
-                                            </td>
-                                            <td className="py-2">
-                                                {c.position}
-                                            </td>
-                                            <td className="py-2">
-                                                {c.is_active ? 'Yes' : 'No'}
-                                            </td>
-                                            <td className="py-2 text-right">
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger
-                                                        asChild
-                                                    >
-                                                        <Button
-                                                            variant="outline"
-                                                            className="cursor-pointer"
-                                                        >
-                                                            <EllipsisVerticalIcon />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent>
-                                                        <DropdownMenuItem
-                                                            className="cursor-pointer"
-                                                            onClick={() => setViewMenu(c)}
-                                                        >
-                                                            <ViewIcon />
-                                                            View
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem
-                                                            className="cursor-pointer"
-                                                            onClick={() => setEditMenu(c)}
-                                                        >
-                                                            <EditIcon />
-                                                            Edit
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem
-                                                            variant="destructive"
-                                                            className="cursor-pointer"
-                                                            onClick={() =>
-                                                                deleteMenu(c.id)
-                                                            }
-                                                        >
-                                                            <DeleteIcon />
-                                                            Delete
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+            <DataTable<MenuItem>
+                items={items}
+                columns={menuColumns}
+                currentPage={currentPage}
+                lastPage={lastPage}
+                search={search}
+                onSearch={setSearch}
+                onPageChange={(page) => void load(page)}
+                onView={(item) => setViewMenu(item)}
+                onEdit={(item) => setEditMenu(item)}
+                onDelete={deleteMenu}
+                loading={loading}
+                emptyMessage="No menus."
+                error={error}
+                title="List"
+            />
 
             {/* dialogs triggered by table actions */}
             {viewMenu && (
@@ -421,13 +331,10 @@ function CreateMenuDialog({
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="cat-active">Active (1/0)</Label>
-                            <Input
+                            <Checkbox
                                 id="cat-active"
-                                type="number"
-                                value={isActive ? '1' : '0'}
-                                onChange={(e) =>
-                                    setIsActive(e.target.value !== '0')
-                                }
+                                checked={isActive}
+                                onCheckedChange={(v) => setIsActive(!!v)}
                             />
                         </div>
                     </div>
@@ -484,8 +391,7 @@ function ViewMenuDialog({
                         <strong>Description:</strong> {menu.description || '—'}
                     </div>
                     <div>
-                        <strong>Parent:</strong>{' '}
-                        {menu.parent?.name ?? '(none)'}
+                        <strong>Parent:</strong> {menu.parent?.name ?? '(none)'}
                     </div>
                     <div>
                         <strong>Position:</strong> {menu.position}
@@ -494,8 +400,11 @@ function ViewMenuDialog({
                         <strong>Active:</strong> {menu.is_active ? 'Yes' : 'No'}
                     </div>
                 </div>
-                <div className="flex justify-end mt-4">
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>
+                <div className="mt-4 flex justify-end">
+                    <Button
+                        variant="outline"
+                        onClick={() => onOpenChange(false)}
+                    >
                         Close
                     </Button>
                 </div>
@@ -624,13 +533,10 @@ function EditMenuDialog({
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="edit-active">Active (1/0)</Label>
-                            <Input
+                            <Checkbox
                                 id="edit-active"
-                                type="number"
-                                value={isActive ? '1' : '0'}
-                                onChange={(e) =>
-                                    setIsActive(e.target.value !== '0')
-                                }
+                                checked={isActive}
+                                onCheckedChange={(v) => setIsActive(!!v)}
                             />
                         </div>
                     </div>
