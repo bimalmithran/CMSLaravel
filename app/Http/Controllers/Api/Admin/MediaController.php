@@ -12,7 +12,7 @@ class MediaController extends Controller
     public function index()
     {
         // Fetch all media, newest first
-        $media = Media::orderBy('created_at', 'desc')->get();
+        $media = Media::orderBy('created_at', 'desc')->paginate(24);
 
         return response()->json([
             'success' => true,

@@ -47,7 +47,7 @@ class CategoryController extends Controller
             'description' => ['nullable', 'string'],
             'order' => ['nullable', 'integer'],
             'is_active' => ['nullable', 'boolean'],
-            'image' => ['nullable', 'string', 'url', 'max:255'],
+            'image' => ['nullable', 'string', 'max:255'],
         ]);
 
         $slug = $validated['slug'] ?? Category::generateSlug($validated['name']);
@@ -80,7 +80,7 @@ class CategoryController extends Controller
             'description' => ['sometimes', 'nullable', 'string'],
             'order' => ['sometimes', 'nullable', 'integer'],
             'is_active' => ['sometimes', 'boolean'],
-            'image' => ['sometimes', 'nullable', 'string', 'url', 'max:255'],
+            'image' => ['sometimes', 'nullable', 'string', 'max:255'],
         ]);
 
         if (array_key_exists('name', $validated) && (!array_key_exists('slug', $validated) || $validated['slug'] === null)) {

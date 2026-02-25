@@ -14,18 +14,30 @@ type MediaItem = {
     size: number;
 };
 
+type Paginated<T> = {
+    data: T[];
+    current_page: number;
+    last_page: number;
+    total: number;
+};
+
 export function MediaPage() {
     const [media, setMedia] = useState<MediaItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(1);
+    const [lastPage, setLastPage] = useState(1);
 
-    // useCallback ensures this function definition is stable across renders,
-    // which satisfies the useEffect dependency linter.
-    const loadMedia = useCallback(async () => {
+    const loadMedia = useCallback(async (targetPage = 1) => {
         setLoading(true);
         try {
-            const res = await apiFetch<MediaItem[]>('/api/v1/admin/media');
+            // Fetch with page parameter
+            const res = await apiFetch<Paginated<MediaItem>>(
+                `/api/v1/admin/media?page=${targetPage}`,
+            );
             if (res.success) {
-                setMedia(res.data);
+                setMedia(res.data.data); // Notice the double .data
+                setPage(res.data.current_page);
+                setLastPage(res.data.last_page);
             }
         } catch (error) {
             console.error('Failed to load media:', error);
@@ -40,16 +52,16 @@ export function MediaPage() {
 
     async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
         if (!e.target.files?.[0]) return;
-        
+
         const formData = new FormData();
         formData.append('file', e.target.files[0]);
 
         try {
-            // Note: If your custom apiFetch automatically stringifies JSON, 
+            // Note: If your custom apiFetch automatically stringifies JSON,
             // you may need to ensure it skips that step when the body is FormData.
             const res = await apiFetch<MediaItem>('/api/v1/admin/media', {
                 method: 'POST',
-                body: formData, 
+                body: formData,
             });
 
             if (res.success) {
@@ -62,12 +74,12 @@ export function MediaPage() {
 
     async function handleDelete(id: number) {
         if (!confirm('Are you sure you want to delete this file?')) return;
-        
+
         try {
             const res = await apiFetch<unknown>(`/api/v1/admin/media/${id}`, {
                 method: 'DELETE',
             });
-            
+
             if (res.success) {
                 void loadMedia();
             }
@@ -77,7 +89,7 @@ export function MediaPage() {
     }
 
     return (
-        <div className="space-y-4 max-w-6xl mx-auto">
+        <div className="mx-auto max-w-6xl space-y-4">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <div className="text-lg font-semibold">Media Library</div>
@@ -85,19 +97,19 @@ export function MediaPage() {
                         Manage your images and files.
                     </div>
                 </div>
-                
+
                 <div className="flex gap-2">
                     {/* Label acts as the trigger for the hidden file input */}
                     <Label htmlFor="upload" className="cursor-pointer">
-                        <div className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md flex items-center gap-2 text-sm font-medium transition-colors">
-                            <Upload className="w-4 h-4" /> 
+                        <div className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
+                            <Upload className="h-4 w-4" />
                             Upload File
                         </div>
-                        <input 
-                            id="upload" 
-                            type="file" 
-                            className="hidden" 
-                            onChange={handleUpload} 
+                        <input
+                            id="upload"
+                            type="file"
+                            className="hidden"
+                            onChange={handleUpload}
                             accept="image/*,.pdf,.doc,.docx"
                         />
                     </Label>
@@ -105,43 +117,71 @@ export function MediaPage() {
             </div>
 
             {loading ? (
-                <div className="text-sm text-muted-foreground">Loading media...</div>
+                <div className="text-sm text-muted-foreground">
+                    Loading media...
+                </div>
             ) : media.length === 0 ? (
-                <div className="text-sm text-muted-foreground border border-dashed p-8 text-center rounded-lg">
+                <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
                     No files found. Upload your first image!
                 </div>
             ) : (
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">
                     {media.map((item) => (
-                        <Card key={item.id} className="group relative overflow-hidden border">
-                            <CardContent className="p-0 aspect-square flex items-center justify-center bg-muted/50">
+                        <Card
+                            key={item.id}
+                            className="group relative overflow-hidden border"
+                        >
+                            <CardContent className="flex aspect-square items-center justify-center bg-muted/50 p-0">
                                 {item.mime_type.startsWith('image/') ? (
-                                    <img 
-                                        src={item.path} 
-                                        alt={item.file_name} 
-                                        className="object-cover w-full h-full" 
+                                    <img
+                                        src={item.path}
+                                        alt={item.file_name}
+                                        className="h-full w-full object-cover"
                                     />
                                 ) : (
-                                    <FileIcon className="w-10 h-10 text-muted-foreground" />
+                                    <FileIcon className="h-10 w-10 text-muted-foreground" />
                                 )}
-                                
+
                                 {/* Hover overlay with delete button */}
-                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                    <Button 
-                                        variant="destructive" 
-                                        size="icon" 
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100">
+                                    <Button
+                                        variant="destructive"
+                                        size="icon"
                                         className="h-8 w-8 cursor-pointer"
-                                        onClick={() => void handleDelete(item.id)}
+                                        onClick={() =>
+                                            void handleDelete(item.id)
+                                        }
                                     >
-                                        <Trash2 className="w-4 h-4" />
+                                        <Trash2 className="h-4 w-4" />
                                     </Button>
                                 </div>
                             </CardContent>
-                            <div className="p-2 text-[10px] truncate font-mono bg-background border-t">
+                            <div className="truncate border-t bg-background p-2 font-mono text-[10px]">
                                 {item.file_name}
                             </div>
                         </Card>
                     ))}
+                </div>
+            )}
+            {lastPage > 1 && (
+                <div className="mt-6 flex items-center justify-between">
+                    <Button
+                        variant="outline"
+                        disabled={page === 1 || loading}
+                        onClick={() => void loadMedia(page - 1)}
+                    >
+                        Previous
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                        Page {page} of {lastPage}
+                    </span>
+                    <Button
+                        variant="outline"
+                        disabled={page === lastPage || loading}
+                        onClick={() => void loadMedia(page + 1)}
+                    >
+                        Next
+                    </Button>
                 </div>
             )}
         </div>
