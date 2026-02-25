@@ -1,6 +1,7 @@
 import {
     FolderTree,
     GalleryVerticalEnd,
+    Images,
     LayoutDashboard,
     List,
     LogOut,
@@ -158,6 +159,7 @@ export function AdminLayout() {
         { to: '/orders', label: 'Orders', icon: ShoppingCart },
         { to: '/admin-users', label: 'Admin Users', icon: UserCog },
         { to: '/customers', label: 'Customers', icon: Users },
+        { to: '/media', label: 'Media', icon: Images },
         { to: '/settings', label: 'Settings', icon: Settings },
     ];
 

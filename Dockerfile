@@ -4,11 +4,11 @@ WORKDIR /app
 
 RUN apt-get update \
     && apt-get install -y \
-       git \
-       unzip \
-       libzip-dev \
-       libpng-dev \
-       libonig-dev \
+    git \
+    unzip \
+    libzip-dev \
+    libpng-dev \
+    libonig-dev \
     && docker-php-ext-install pdo_mysql zip \
     && rm -rf /var/lib/apt/lists/*
 

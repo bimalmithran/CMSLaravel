@@ -8,6 +8,7 @@ import { CategoriesPage } from './pages/Categories'
 import { CustomersPage } from './pages/Customers'
 import { DashboardPage } from './pages/Dashboard'
 import { LoginPage } from './pages/Login'
+import { MediaPage } from './pages/Media'
 import { MenuPage } from './pages/Menus'
 import { OrdersPage } from './pages/Orders'
 import { ProductsPage } from './pages/Products'
@@ -28,6 +29,7 @@ export function AdminApp() {
             <Route path="/orders" element={<OrdersPage />} />
             <Route path="/admin-users" element={<AdminUsersPage />} />
             <Route path="/customers" element={<CustomersPage />} />
+            <Route path="/media" element={<MediaPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
         </Route>
