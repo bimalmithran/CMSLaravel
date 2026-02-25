@@ -6,13 +6,13 @@ use App\Http\Controllers\Api\Admin\CategoryController as AdminCategoryController
 use App\Http\Controllers\Api\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Api\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Api\Admin\MenuController as MenuController;
 use App\Http\Controllers\Api\AuthController as CustomerAuthController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\WishlistController;
-use App\Http\Controllers\MenuController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', fn() => response()->json(['status' => 'ok']));
