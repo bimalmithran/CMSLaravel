@@ -2,17 +2,19 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class ProductReview extends Model
+class Review extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'product_id',
-        'customer_name',
-        'customer_email',
+        'user_id',
         'rating',
-        'review',
+        'comment',
         'is_approved',
     ];
 
@@ -24,5 +26,10 @@ class ProductReview extends Model
     {
         return $this->belongsTo(Product::class);
     }
-}
 
+    public function user(): BelongsTo
+    {
+        // Assumes you have standard Laravel User model
+        return $this->belongsTo(User::class); 
+    }
+}

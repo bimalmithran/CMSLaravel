@@ -2,91 +2,91 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Product extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'category_id',
+        'brand_id',
+        'product_type_id',
         'name',
         'slug',
+        'sku',
+        'short_description',
         'description',
-        'long_description',
         'price',
         'discount_price',
         'stock',
-        'sku',
         'image',
         'gallery',
-        'attributes',
-        'weight',
-        'material',
-        'purity',
+        'meta_title',
+        'meta_description',
         'is_featured',
         'is_active',
-        'views',
-        'rating',
+        // Note: views, rating_avg, rating_count are typically updated via code, not mass assignment
     ];
 
     protected $casts = [
-        'price' => 'decimal:2',
-        'discount_price' => 'decimal:2',
-        'gallery' => 'array',
-        'attributes' => 'array',
+        'price' => 'float',
+        'discount_price' => 'float',
+        'gallery' => 'array', // Automatically handles JSON conversion
         'is_featured' => 'boolean',
         'is_active' => 'boolean',
-        'rating' => 'decimal:2',
     ];
+
+    // --- Core Relationships ---
 
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
     }
 
+    public function brand(): BelongsTo
+    {
+        return $this->belongsTo(Brand::class);
+    }
+
+    public function productType(): BelongsTo
+    {
+        return $this->belongsTo(ProductType::class);
+    }
+
+    // --- Subtype (Class Table Inheritance) Relationships ---
+
+    public function jewelrySpec(): HasOne
+    {
+        return $this->hasOne(JewelrySpec::class);
+    }
+
+    public function watchSpec(): HasOne
+    {
+        return $this->hasOne(WatchSpec::class);
+    }
+
+    public function diamondSpec(): HasOne
+    {
+        return $this->hasOne(DiamondSpec::class);
+    }
+
+    // --- Extensions ---
+
+    public function sizes(): BelongsToMany
+    {
+        return $this->belongsToMany(Size::class, 'product_size')
+            ->withPivot(['id', 'stock', 'weight_adjustment', 'price_adjustment'])
+            ->withTimestamps();
+    }
+
     public function reviews(): HasMany
     {
-        return $this->hasMany(ProductReview::class);
-    }
-
-    public function scopeActive($query)
-    {
-        return $query->where('is_active', true);
-    }
-
-    public function scopeFeatured($query)
-    {
-        return $query->where('is_featured', true);
-    }
-
-    public function getEffectivePriceAttribute()
-    {
-        return $this->discount_price ?? $this->price;
-    }
-
-    public function getDiscountPercentageAttribute()
-    {
-        if (!$this->discount_price) {
-            return 0;
-        }
-
-        if ((float) $this->price === 0.0) {
-            return 0;
-        }
-
-        return (int) round((($this->price - $this->discount_price) / $this->price) * 100);
-    }
-
-    public function isInStock(): bool
-    {
-        return $this->stock > 0;
-    }
-
-    public static function generateSlug(string $name): string
-    {
-        return Str::slug($name);
+        return $this->hasMany(Review::class);
     }
 }
-
