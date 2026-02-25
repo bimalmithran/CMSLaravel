@@ -11,6 +11,7 @@ import { LoginPage } from './pages/Login'
 import { MenuPage } from './pages/Menus'
 import { OrdersPage } from './pages/Orders'
 import { ProductsPage } from './pages/Products'
+import { SettingsPage } from './pages/Settings'
 
 export function AdminApp() {
   return (
@@ -27,6 +28,7 @@ export function AdminApp() {
             <Route path="/orders" element={<OrdersPage />} />
             <Route path="/admin-users" element={<AdminUsersPage />} />
             <Route path="/customers" element={<CustomersPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
           </Route>
         </Route>
 

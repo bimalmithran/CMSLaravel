@@ -6,6 +6,7 @@ import {
     LogOut,
     Moon,
     Package,
+    Settings,
     ShoppingCart,
     Sun,
     UserCog,
@@ -157,6 +158,7 @@ export function AdminLayout() {
         { to: '/orders', label: 'Orders', icon: ShoppingCart },
         { to: '/admin-users', label: 'Admin Users', icon: UserCog },
         { to: '/customers', label: 'Customers', icon: Users },
+        { to: '/settings', label: 'Settings', icon: Settings },
     ];
 
     return (

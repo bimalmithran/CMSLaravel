@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\Admin\CustomerController as AdminCustomerController
 use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Api\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Api\Admin\MenuController as MenuController;
+use App\Http\Controllers\Api\Admin\SettingController as SettingController;
 use App\Http\Controllers\Api\AuthController as CustomerAuthController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
@@ -83,6 +84,9 @@ Route::prefix('v1')->group(function () {
             Route::get('/orders/{id}', [AdminOrderController::class, 'show']);
             Route::put('/orders/{id}/status', [AdminOrderController::class, 'updateStatus']);
             Route::put('/orders/{id}/payment-status', [AdminOrderController::class, 'updatePaymentStatus']);
+
+            // Admin settings
+            Route::get('/settings', [SettingController::class, 'index']);
         });
     });
 });
