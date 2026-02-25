@@ -12,6 +12,8 @@ class MenuController extends Controller
     public function index(Request $request): JsonResponse
     {
         $search = $request->query('search');
+        $sortBy = $request->query('sort_by', 'id');
+        $sortOrder = $request->query('sort_dir', 'desc');
         // Logic to list all menus in a paginated manner
         $menus = Menu::with('parent')->when($search, function ($query, $search) {
             $query->where('name', 'like', "%{$search}%");
@@ -19,7 +21,7 @@ class MenuController extends Controller
             $query->orWhereHas('parent', function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%");
             });
-        })->orderBy('id', 'desc')->paginate(10);
+        })->orderBy($sortBy, $sortOrder)->paginate(10);
 
         return response()->json(['success' => true, 'data' => $menus]);
     }
