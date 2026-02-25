@@ -91,6 +91,7 @@ Route::prefix('v1')->group(function () {
 
             // Admin settings
             Route::get('/settings', [SettingController::class, 'index']);
+            Route::put('/settings/bulk', [SettingController::class, 'bulkUpdate']);
         });
     });
 });

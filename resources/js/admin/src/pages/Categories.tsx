@@ -27,7 +27,9 @@ import {
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { DataTable } from '../components/DataTable';
+import { MediaPicker } from '../components/MediaPicker';
 import { apiFetch } from '../lib/api';
+import { Field } from '@/components/ui/field';
 
 type Category = {
     id: number;
@@ -61,39 +63,46 @@ export function CategoriesPage() {
     const [sorting, setSorting] = useState<SortingState>([]);
 
     // currently selected items for view/edit dialogs
-    const [viewCategory, setViewCategory] = React.useState<Category | null>(null);
-    const [editCategory, setEditCategory] = React.useState<Category | null>(null);
+    const [viewCategory, setViewCategory] = React.useState<Category | null>(
+        null,
+    );
+    const [editCategory, setEditCategory] = React.useState<Category | null>(
+        null,
+    );
 
-    const load = React.useCallback(async (page: number = 1) => {
-        setLoading(true);
-        setError(null);
-        try {
-            const params = new URLSearchParams();
-            params.append('page', String(page));
-            if (search) params.append('search', search);
+    const load = React.useCallback(
+        async (page: number = 1) => {
+            setLoading(true);
+            setError(null);
+            try {
+                const params = new URLSearchParams();
+                params.append('page', String(page));
+                if (search) params.append('search', search);
 
-            if (sorting.length > 0) {
-                const activeSort = sorting[0];
-                params.append('sort_by', activeSort.id);
-                params.append('sort_dir', activeSort.desc ? 'desc' : 'asc');
+                if (sorting.length > 0) {
+                    const activeSort = sorting[0];
+                    params.append('sort_by', activeSort.id);
+                    params.append('sort_dir', activeSort.desc ? 'desc' : 'asc');
+                }
+
+                const res = await apiFetch<Paginated<Category>>(
+                    '/api/v1/admin/categories?' + params.toString(),
+                );
+                if (!res.success) {
+                    setError(res.message || 'Failed to load categories');
+                    return;
+                }
+                setItems(res.data.data);
+                setCurrentPage(res.data.current_page);
+                setLastPage(res.data.last_page);
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'Unknown error');
+            } finally {
+                setLoading(false);
             }
-
-            const res = await apiFetch<Paginated<Category>>(
-                '/api/v1/admin/categories?' + params.toString(),
-            );
-            if (!res.success) {
-                setError(res.message || 'Failed to load categories');
-                return;
-            }
-            setItems(res.data.data);
-            setCurrentPage(res.data.current_page);
-            setLastPage(res.data.last_page);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Unknown error');
-        } finally {
-            setLoading(false);
-        }
-    }, [search, sorting]);
+        },
+        [search, sorting],
+    );
 
     const loadParents = React.useCallback(async () => {
         const res = await apiFetch<Category[]>('/api/v1/admin/categories/list');
@@ -170,7 +179,11 @@ export function CategoriesPage() {
                     return (
                         <Button
                             variant="ghost"
-                            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                            onClick={() =>
+                                column.toggleSorting(
+                                    column.getIsSorted() === 'asc',
+                                )
+                            }
                             className="-ml-4 cursor-pointer"
                         >
                             Name
@@ -183,7 +196,11 @@ export function CategoriesPage() {
                 id: 'parent',
                 accessorKey: 'parent',
                 header: 'Parent',
-                cell: ({ row }) => <span className="font-mono text-xs">{row.original.parent?.name ?? '(none)'}</span>,
+                cell: ({ row }) => (
+                    <span className="font-mono text-xs">
+                        {row.original.parent?.name ?? '(none)'}
+                    </span>
+                ),
             },
             {
                 id: 'order',
@@ -192,7 +209,11 @@ export function CategoriesPage() {
                     return (
                         <Button
                             variant="ghost"
-                            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                            onClick={() =>
+                                column.toggleSorting(
+                                    column.getIsSorted() === 'asc',
+                                )
+                            }
                             className="-ml-4 cursor-pointer"
                         >
                             Order
@@ -218,9 +239,11 @@ export function CategoriesPage() {
                                 <DropdownMenuTrigger asChild>
                                     <Button
                                         variant="ghost"
-                                        className="h-8 w-8 p-0 cursor-pointer"
+                                        className="h-8 w-8 cursor-pointer p-0"
                                     >
-                                        <span className="sr-only">Open menu</span>
+                                        <span className="sr-only">
+                                            Open menu
+                                        </span>
                                         <EllipsisVerticalIcon className="h-4 w-4" />
                                     </Button>
                                 </DropdownMenuTrigger>
@@ -255,7 +278,7 @@ export function CategoriesPage() {
                 },
             },
         ],
-        [currentPage]
+        [currentPage],
     );
 
     return (
@@ -328,6 +351,7 @@ function CreateCategoryDialog({
         parent_id?: number | null;
         order?: number;
         is_active?: boolean;
+        image?: string;
     }) => Promise<void>;
 }) {
     const [open, setOpen] = useState(false);
@@ -338,8 +362,9 @@ function CreateCategoryDialog({
     const [isActive, setIsActive] = useState(true);
     const [saving, setSaving] = useState(false);
     const [err, setErr] = useState<string | null>(null);
+    const [image, setImage] = useState<string>(''); // NEW: Add image state
 
-    async function submit(e: React.FormEvent) {
+    async function submit(e: React.SubmitEvent) {
         e.preventDefault();
         setSaving(true);
         setErr(null);
@@ -350,6 +375,7 @@ function CreateCategoryDialog({
                 parent_id: parentId === '' ? null : parentId,
                 order,
                 is_active: isActive,
+                image: image || undefined, // Pass image URL if set
             });
             setOpen(false);
             setName('');
@@ -357,6 +383,7 @@ function CreateCategoryDialog({
             setParentId('');
             setOrder(0);
             setIsActive(true);
+            setImage(''); // Reset image state
         } catch (e) {
             setErr(e instanceof Error ? e.message : 'Create failed');
         } finally {
@@ -422,14 +449,34 @@ function CreateCategoryDialog({
                                 }
                             />
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="cat-active">Active</Label>
-                            <Checkbox
-                                id="cat-active"
-                                checked={isActive}
-                                onCheckedChange={(v) => setIsActive(!!v)}
-                            />
+                        <div className="mt-6 flex items-center">
+                            <Field
+                                orientation="horizontal"
+                                className="flex items-center gap-2"
+                            >
+                                <Checkbox
+                                    id="cat-active"
+                                    checked={isActive}
+                                    onCheckedChange={(v) => setIsActive(!!v)}
+                                />
+                                <Label
+                                    htmlFor="cat-active"
+                                    className="m-0 cursor-pointer font-normal"
+                                >
+                                    Active
+                                </Label>
+                            </Field>
                         </div>
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Category Image</Label>
+                        {/* NEW: Drop in the Media Picker! */}
+                        <MediaPicker
+                            value={image}
+                            onSelect={(url: React.SetStateAction<string>) =>
+                                setImage(url)
+                            }
+                        />
                     </div>
 
                     {err ? (
@@ -627,13 +674,20 @@ function EditCategoryDialog({
                                 }
                             />
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="edit-active">Active</Label>
-                            <Checkbox
-                                id="edit-active"
-                                checked={isActive}
-                                onCheckedChange={(v) => setIsActive(!!v)}
-                            />
+                        <div className="mt-6 flex items-center">
+                            <div className="flex items-center gap-2">
+                                <Checkbox
+                                    id="edit-active"
+                                    checked={isActive}
+                                    onCheckedChange={(v) => setIsActive(!!v)}
+                                />
+                                <Label
+                                    htmlFor="edit-active"
+                                    className="m-0 cursor-pointer font-normal"
+                                >
+                                    Active
+                                </Label>
+                            </div>
                         </div>
                     </div>
 

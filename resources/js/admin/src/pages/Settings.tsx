@@ -18,6 +18,7 @@ import {
     TabsTrigger,
 } from '../../../components/ui/tabs';
 import { Textarea } from '../../../components/ui/textarea';
+import { MediaPicker } from '../components/MediaPicker';
 
 import { apiFetch } from '../lib/api';
 
@@ -196,31 +197,17 @@ export function SettingsPage() {
                                                         rows={4}
                                                     />
                                                 ) : setting.type === 'image' ? (
-                                                    <div className="flex items-center gap-4">
-                                                        <Input
-                                                            id={`setting-${setting.id}`}
-                                                            value={
-                                                                setting.value ||
-                                                                ''
-                                                            }
-                                                            onChange={(e) =>
-                                                                handleValueChange(
-                                                                    setting.id,
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                            placeholder="https://..."
-                                                        />
-                                                        {/* Future feature: Add a 'Browse Media' button here */}
-                                                        <Button
-                                                            variant="outline"
-                                                            type="button"
-                                                            disabled
-                                                        >
-                                                            Browse
-                                                        </Button>
-                                                    </div>
+                                                    <MediaPicker
+                                                        value={
+                                                            setting.value || ''
+                                                        }
+                                                        onSelect={(url) =>
+                                                            handleValueChange(
+                                                                setting.id,
+                                                                url,
+                                                            )
+                                                        }
+                                                    />
                                                 ) : (
                                                     <Input
                                                         id={`setting-${setting.id}`}

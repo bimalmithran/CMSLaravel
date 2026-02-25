@@ -47,7 +47,7 @@ class CategoryController extends Controller
             'description' => ['nullable', 'string'],
             'order' => ['nullable', 'integer'],
             'is_active' => ['nullable', 'boolean'],
-            'image_file' => ['nullable', 'file', 'image', 'max:5120'],
+            'image' => ['nullable', 'string', 'url', 'max:255'],
         ]);
 
         $slug = $validated['slug'] ?? Category::generateSlug($validated['name']);
@@ -56,10 +56,6 @@ class CategoryController extends Controller
             ...$validated,
             'slug' => $slug,
         ]);
-
-        if ($request->hasFile('image_file')) {
-            $category->image = $request->file('image_file')->store('categories', 'public');
-        }
 
         $category->save();
 
@@ -84,18 +80,11 @@ class CategoryController extends Controller
             'description' => ['sometimes', 'nullable', 'string'],
             'order' => ['sometimes', 'nullable', 'integer'],
             'is_active' => ['sometimes', 'boolean'],
-            'image_file' => ['sometimes', 'nullable', 'file', 'image', 'max:5120'],
+            'image' => ['sometimes', 'nullable', 'string', 'url', 'max:255'],
         ]);
 
         if (array_key_exists('name', $validated) && (!array_key_exists('slug', $validated) || $validated['slug'] === null)) {
             $validated['slug'] = Category::generateSlug($validated['name']);
-        }
-
-        if ($request->hasFile('image_file')) {
-            if ($category->image) {
-                Storage::disk('public')->delete($category->image);
-            }
-            $validated['image'] = $request->file('image_file')->store('categories', 'public');
         }
 
         $category->update($validated);

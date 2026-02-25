@@ -28,6 +28,7 @@ import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
 import { DataTable } from '../components/DataTable';
 import { apiFetch } from '../lib/api';
+import { Field } from '@/components/ui/field';
 
 type MenuItem = {
     id: number;
@@ -447,13 +448,23 @@ function CreateMenuDialog({
                                 }
                             />
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="cat-active">Active (1/0)</Label>
-                            <Checkbox
-                                id="cat-active"
-                                checked={isActive}
-                                onCheckedChange={(v) => setIsActive(!!v)}
-                            />
+                        <div className="mt-6 flex items-center">
+                            <Field
+                                orientation="horizontal"
+                                className="flex items-center gap-2"
+                            >
+                                <Checkbox
+                                    id="cat-active"
+                                    checked={isActive}
+                                    onCheckedChange={(v) => setIsActive(!!v)}
+                                />
+                                <Label
+                                    htmlFor="cat-active"
+                                    className="m-0 cursor-pointer font-normal"
+                                >
+                                    Active
+                                </Label>
+                            </Field>
                         </div>
                     </div>
 
@@ -649,13 +660,20 @@ function EditMenuDialog({
                                 }
                             />
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="edit-active">Active (1/0)</Label>
-                            <Checkbox
-                                id="edit-active"
-                                checked={isActive}
-                                onCheckedChange={(v) => setIsActive(!!v)}
-                            />
+                        <div className="mt-6 flex items-center">
+                            <div className="flex items-center gap-2">
+                                <Checkbox
+                                    id="edit-active"
+                                    checked={isActive}
+                                    onCheckedChange={(v) => setIsActive(!!v)}
+                                />
+                                <Label
+                                    htmlFor="edit-active"
+                                    className="m-0 cursor-pointer font-normal"
+                                >
+                                    Active
+                                </Label>
+                            </div>
                         </div>
                     </div>
 
