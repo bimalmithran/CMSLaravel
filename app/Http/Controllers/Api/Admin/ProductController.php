@@ -13,6 +13,10 @@ class ProductController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        $search = $request->query('search');
+        $sortBy = $request->query('sort_by', 'id');
+        $sortOrder = $request->query('sort_dir', 'desc');
+
         $query = Product::query()->with('category');
 
         if ($request->filled('category_id')) {
@@ -23,11 +27,14 @@ class ProductController extends Controller
             $search = $request->string('search')->toString();
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('sku', 'like', "%{$search}%");
+                    ->orWhere('sku', 'like', "%{$search}%")
+                    ->orWhereHas('parent', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
+                    });
             });
         }
 
-        $products = $query->orderByDesc('id')->paginate(20);
+        $products = $query->orderBy($sortBy, $sortOrder)->paginate(20);
 
         return response()->json(['success' => true, 'data' => $products]);
     }
@@ -174,4 +181,3 @@ class ProductController extends Controller
         return response()->json(['success' => true]);
     }
 }
-

@@ -1,10 +1,12 @@
+import type { ColumnDef, SortingState } from '@tanstack/react-table';
 import {
+    ArrowUpDown,
     DeleteIcon,
     EditIcon,
     EllipsisVerticalIcon,
     ViewIcon,
 } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 
 import {
     DropdownMenu,
@@ -14,12 +16,6 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '../../../components/ui/button';
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from '../../../components/ui/card';
 import { Checkbox } from '../../../components/ui/checkbox';
 import {
     Dialog,
@@ -29,13 +25,8 @@ import {
     DialogTrigger,
 } from '../../../components/ui/dialog';
 import { Input } from '../../../components/ui/input';
-import {
-    InputGroup,
-    InputGroupAddon,
-    InputGroupButton,
-    InputGroupInput,
-} from '../../../components/ui/input-group';
 import { Label } from '../../../components/ui/label';
+import { DataTable } from '../components/DataTable';
 import { apiFetch } from '../lib/api';
 
 type Category = {
@@ -43,11 +34,11 @@ type Category = {
     name: string;
     slug: string;
     description: string;
-    parent_id: number | null; // <--- optional parent pointer
+    parent_id: number | null;
     order: number;
     is_active: boolean;
     image: string | null;
-    parent: { id: number; name: string } | null; // <--- included parent data
+    parent: { id: number; name: string } | null;
 };
 
 type Paginated<T> = {
@@ -59,48 +50,62 @@ type Paginated<T> = {
 
 export function CategoriesPage() {
     const [items, setItems] = useState<Category[]>([]);
-    const [parents, setParents] = useState<Category[]>([]); // list for parent dropdown
+    const [parents, setParents] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [search, setSearch] = useState('');
 
-    // currently selected items for view/edit dialogs
-    const [viewCategory, setViewCategory] = React.useState<Category | null>(
-        null,
-    );
-    const [editCategory, setEditCategory] = React.useState<Category | null>(
-        null,
-    );
+    // pagination & sorting state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [lastPage, setLastPage] = useState(1);
+    const [sorting, setSorting] = useState<SortingState>([]);
 
-    async function load() {
+    // currently selected items for view/edit dialogs
+    const [viewCategory, setViewCategory] = React.useState<Category | null>(null);
+    const [editCategory, setEditCategory] = React.useState<Category | null>(null);
+
+    const load = React.useCallback(async (page: number = 1) => {
         setLoading(true);
         setError(null);
         try {
+            const params = new URLSearchParams();
+            params.append('page', String(page));
+            if (search) params.append('search', search);
+
+            if (sorting.length > 0) {
+                const activeSort = sorting[0];
+                params.append('sort_by', activeSort.id);
+                params.append('sort_dir', activeSort.desc ? 'desc' : 'asc');
+            }
+
             const res = await apiFetch<Paginated<Category>>(
-                '/api/v1/admin/categories?search=' + encodeURIComponent(search),
+                '/api/v1/admin/categories?' + params.toString(),
             );
             if (!res.success) {
                 setError(res.message || 'Failed to load categories');
                 return;
             }
             setItems(res.data.data);
+            setCurrentPage(res.data.current_page);
+            setLastPage(res.data.last_page);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Unknown error');
         } finally {
             setLoading(false);
         }
-    }
+    }, [search, sorting]);
 
-    // load simple list of all active categories for the parent picker
-    async function loadParents() {
+    const loadParents = React.useCallback(async () => {
         const res = await apiFetch<Category[]>('/api/v1/admin/categories/list');
         if (res.success) {
             setParents(res.data);
         }
-    }
+    }, []);
 
     useEffect(() => {
-        void load();
-        void loadParents();
-    }, []);
+        load().catch(console.error);
+        loadParents().catch(console.error);
+    }, [load, loadParents]);
 
     async function createCategory(payload: {
         name: string;
@@ -132,7 +137,7 @@ export function CategoriesPage() {
             json: payload,
         });
         if (!res.success) throw new Error(res.message || 'Update failed');
-        await load();
+        await load(currentPage);
     }
 
     async function deleteCategory(id: number) {
@@ -147,6 +152,112 @@ export function CategoriesPage() {
         await load();
     }
 
+    const columns = useMemo<ColumnDef<Category>[]>(
+        () => [
+            {
+                id: 'index',
+                header: '#',
+                enableHiding: false,
+                cell: ({ row, table }) => {
+                    const meta = table.options.meta as { currentPage: number };
+                    return (meta.currentPage - 1) * 10 + row.index + 1;
+                },
+            },
+            {
+                id: 'name',
+                accessorKey: 'name',
+                header: ({ column }) => {
+                    return (
+                        <Button
+                            variant="ghost"
+                            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                            className="-ml-4 cursor-pointer"
+                        >
+                            Name
+                            <ArrowUpDown className="ml-2 h-4 w-4" />
+                        </Button>
+                    );
+                },
+            },
+            {
+                id: 'parent',
+                accessorKey: 'parent',
+                header: 'Parent',
+                cell: ({ row }) => <span className="font-mono text-xs">{row.original.parent?.name ?? '(none)'}</span>,
+            },
+            {
+                id: 'order',
+                accessorKey: 'order',
+                header: ({ column }) => {
+                    return (
+                        <Button
+                            variant="ghost"
+                            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                            className="-ml-4 cursor-pointer"
+                        >
+                            Order
+                            <ArrowUpDown className="ml-2 h-4 w-4" />
+                        </Button>
+                    );
+                },
+            },
+            {
+                id: 'active',
+                accessorKey: 'is_active',
+                header: 'Active',
+                cell: ({ row }) => (row.original.is_active ? 'Yes' : 'No'),
+            },
+            {
+                id: 'actions',
+                enableHiding: false,
+                cell: ({ row }) => {
+                    const item = row.original;
+                    return (
+                        <div className="text-right">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        className="h-8 w-8 p-0 cursor-pointer"
+                                    >
+                                        <span className="sr-only">Open menu</span>
+                                        <EllipsisVerticalIcon className="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem
+                                        className="cursor-pointer"
+                                        onClick={() => setViewCategory(item)}
+                                    >
+                                        <ViewIcon className="mr-2 h-4 w-4" />
+                                        View
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        className="cursor-pointer"
+                                        onClick={() => setEditCategory(item)}
+                                    >
+                                        <EditIcon className="mr-2 h-4 w-4" />
+                                        Edit
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                        variant="destructive"
+                                        className="cursor-pointer text-destructive"
+                                        onClick={() => deleteCategory(item.id)}
+                                    >
+                                        <DeleteIcon className="mr-2 h-4 w-4" />
+                                        Delete
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                    );
+                },
+            },
+        ],
+        [currentPage]
+    );
+
     return (
         <div className="space-y-4">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -158,27 +269,6 @@ export function CategoriesPage() {
                 </div>
 
                 <div className="flex gap-2">
-                    <InputGroup>
-                        <InputGroupInput
-                            placeholder="Type to search..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            onKeyDown={async (e) => {
-                                if (e.key === 'Enter') {
-                                    await void load();
-                                }
-                            }}
-                        />
-                        <InputGroupAddon align="inline-end">
-                            <InputGroupButton
-                                variant="secondary"
-                                className="cursor-pointer"
-                                onClick={async () => await void load()}
-                            >
-                                Search
-                            </InputGroupButton>
-                        </InputGroupAddon>
-                    </InputGroup>
                     <CreateCategoryDialog
                         onCreate={createCategory}
                         parents={parents}
@@ -186,113 +276,21 @@ export function CategoriesPage() {
                 </div>
             </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>List</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    {loading ? (
-                        <div className="text-sm text-muted-foreground">
-                            Loading…
-                        </div>
-                    ) : error ? (
-                        <div className="text-sm text-destructive">{error}</div>
-                    ) : items.length === 0 ? (
-                        <div className="text-sm text-muted-foreground">
-                            No categories.
-                        </div>
-                    ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full border-collapse text-sm">
-                                <thead>
-                                    <tr className="border-b">
-                                        <th className="py-2 text-left font-medium">
-                                            Name
-                                        </th>
-                                        <th className="py-2 text-left font-medium">
-                                            Parent
-                                        </th>
-                                        <th className="py-2 text-left font-medium">
-                                            Order
-                                        </th>
-                                        <th className="py-2 text-left font-medium">
-                                            Active
-                                        </th>
-                                        <th className="py-2 text-right font-medium">
-                                            Actions
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {items.map((c) => (
-                                        <tr key={c.id} className="border-b">
-                                            <td className="py-2">{c.name}</td>
-                                            <td className="py-2 font-mono text-xs">
-                                                {c.parent?.name ?? '(none)'}
-                                            </td>
-                                            <td className="py-2">{c.order}</td>
-                                            <td className="py-2">
-                                                {c.is_active ? 'Yes' : 'No'}
-                                            </td>
-                                            <td className="py-2 text-right">
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger
-                                                        asChild
-                                                    >
-                                                        <Button
-                                                            variant="outline"
-                                                            className="cursor-pointer"
-                                                        >
-                                                            <EllipsisVerticalIcon />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent>
-                                                        <DropdownMenuItem
-                                                            className="cursor-pointer"
-                                                            onClick={() =>
-                                                                setViewCategory(
-                                                                    c,
-                                                                )
-                                                            }
-                                                        >
-                                                            <ViewIcon />
-                                                            View
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem
-                                                            className="cursor-pointer"
-                                                            onClick={() =>
-                                                                setEditCategory(
-                                                                    c,
-                                                                )
-                                                            }
-                                                        >
-                                                            <EditIcon />
-                                                            Edit
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem
-                                                            variant="destructive"
-                                                            className="cursor-pointer"
-                                                            onClick={() =>
-                                                                deleteCategory(
-                                                                    c.id,
-                                                                )
-                                                            }
-                                                        >
-                                                            <DeleteIcon />
-                                                            Delete
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+            <DataTable<Category, unknown>
+                data={items}
+                columns={columns}
+                currentPage={currentPage}
+                lastPage={lastPage}
+                search={search}
+                onSearch={setSearch}
+                onPageChange={(page) => void load(page)}
+                sorting={sorting}
+                onSortingChange={setSorting}
+                loading={loading}
+                emptyMessage="No categories."
+                error={error}
+                title="List"
+            />
 
             {/* dialogs triggered by table actions */}
             {viewCategory && (
@@ -341,7 +339,7 @@ function CreateCategoryDialog({
     const [saving, setSaving] = useState(false);
     const [err, setErr] = useState<string | null>(null);
 
-    async function submit(e: React.SubmitEvent) {
+    async function submit(e: React.FormEvent) {
         e.preventDefault();
         setSaving(true);
         setErr(null);
@@ -554,7 +552,7 @@ function EditCategoryDialog({
         setErr(null);
     }, [category]);
 
-    async function submit(e: React.SubmitEvent) {
+    async function submit(e: React.FormEvent) {
         e.preventDefault();
         setSaving(true);
         setErr(null);
@@ -578,7 +576,7 @@ function EditCategoryDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Edit Menu</DialogTitle>
+                    <DialogTitle>Edit Category</DialogTitle>
                 </DialogHeader>
                 <form className="space-y-4" onSubmit={submit}>
                     <div className="space-y-2">

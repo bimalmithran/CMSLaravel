@@ -1,10 +1,22 @@
+import type { ColumnDef, SortingState } from '@tanstack/react-table'
+import {
+  ArrowUpDown,
+  DeleteIcon,
+  EllipsisVerticalIcon,
+} from 'lucide-react'
 import React, { useEffect, useMemo, useState } from 'react'
 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Button } from '../../../components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../../../components/ui/dialog'
 import { Input } from '../../../components/ui/input'
 import { Label } from '../../../components/ui/label'
+import { DataTable } from '../components/DataTable'
 import { apiFetch } from '../lib/api'
 
 type Category = { id: number; name: string }
@@ -35,38 +47,59 @@ export function ProductsPage() {
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase()
-    if (!q) return items
-    return items.filter((p) => p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q))
-  }, [items, search])
+  // pagination & sorting state
+  const [currentPage, setCurrentPage] = useState(1)
+  const [lastPage, setLastPage] = useState(1)
+  const [sorting, setSorting] = useState<SortingState>([])
 
-  async function load() {
+  const loadProducts = React.useCallback(async (page: number = 1) => {
     setLoading(true)
     setError(null)
     try {
-      const [productsRes, categoriesRes] = await Promise.all([
-        apiFetch<Paginated<Product>>('/api/v1/admin/products'),
-        apiFetch<Category[]>('/api/v1/categories'),
-      ])
+      const params = new URLSearchParams()
+      params.append('page', String(page))
+      if (search) params.append('search', search)
 
-      if (!productsRes.success) {
-        setError(productsRes.message || 'Failed to load products')
+      if (sorting.length > 0) {
+        const activeSort = sorting[0]
+        params.append('sort_by', activeSort.id)
+        params.append('sort_dir', activeSort.desc ? 'desc' : 'asc')
+      }
+
+      const res = await apiFetch<Paginated<Product>>(
+        '/api/v1/admin/products?' + params.toString()
+      )
+
+      if (!res.success) {
+        setError(res.message || 'Failed to load products')
         return
       }
-      if (categoriesRes.success) {
-        setCategories(categoriesRes.data)
-      }
 
-      setItems(productsRes.data.data)
+      setItems(res.data.data)
+      setCurrentPage(res.data.current_page)
+      setLastPage(res.data.last_page)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error')
     } finally {
       setLoading(false)
     }
-  }
+  }, [search, sorting])
+
+  const loadCategories = React.useCallback(async () => {
+    try {
+      const res = await apiFetch<Category[]>('/api/v1/categories')
+      if (res.success) {
+        setCategories(res.data)
+      }
+    } catch (err) {
+      console.error('Failed to load categories', err)
+    }
+  }, [])
 
   useEffect(() => {
-    void load()
-  }, [])
+    loadProducts().catch(console.error)
+    loadCategories().catch(console.error)
+  }, [loadProducts, loadCategories])
 
   async function createProduct(payload: {
     category_id: number
@@ -78,7 +111,7 @@ export function ProductsPage() {
   }) {
     const res = await apiFetch<Product>('/api/v1/admin/products', { method: 'POST', json: payload })
     if (!res.success) throw new Error(res.message || 'Create failed')
-    await load()
+    await loadProducts()
   }
 
   async function deleteProduct(id: number) {
@@ -88,12 +121,143 @@ export function ProductsPage() {
       alert(res.message || 'Delete failed')
       return
     }
-    await load()
+    await loadProducts(currentPage)
   }
 
-  function categoryName(categoryId: number) {
-    return categories.find((c) => c.id === categoryId)?.name ?? `#${categoryId}`
-  }
+  const columns = useMemo<ColumnDef<Product>[]>(
+    () => [
+      {
+        id: 'index',
+        header: '#',
+        enableHiding: false,
+        cell: ({ row, table }) => {
+          const meta = table.options.meta as { currentPage: number }
+          return (meta.currentPage - 1) * 10 + row.index + 1
+        },
+      },
+      {
+        id: 'name',
+        accessorKey: 'name',
+        header: ({ column }) => {
+          return (
+            <Button
+              variant="ghost"
+              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+              className="-ml-4 cursor-pointer"
+            >
+              Name
+              <ArrowUpDown className="ml-2 h-4 w-4" />
+            </Button>
+          )
+        },
+      },
+      {
+        id: 'sku',
+        accessorKey: 'sku',
+        header: ({ column }) => {
+          return (
+            <Button
+              variant="ghost"
+              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+              className="-ml-4 cursor-pointer"
+            >
+              SKU
+              <ArrowUpDown className="ml-2 h-4 w-4" />
+            </Button>
+          )
+        },
+        cell: ({ row }) => <span className="font-mono text-xs">{row.original.sku}</span>,
+      },
+      {
+        id: 'category',
+        accessorKey: 'category_id',
+        header: 'Category',
+        cell: ({ row }) => {
+          const cat = categories.find((c) => c.id === row.original.category_id)
+          return cat ? cat.name : `#${row.original.category_id}`
+        },
+      },
+      {
+        id: 'price',
+        accessorKey: 'price',
+        header: ({ column }) => {
+          return (
+            <Button
+              variant="ghost"
+              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+              className="-ml-4 cursor-pointer"
+            >
+              Price
+              <ArrowUpDown className="ml-2 h-4 w-4" />
+            </Button>
+          )
+        },
+      },
+      {
+        id: 'stock',
+        accessorKey: 'stock',
+        header: ({ column }) => {
+          return (
+            <Button
+              variant="ghost"
+              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+              className="-ml-4 cursor-pointer"
+            >
+              Stock
+              <ArrowUpDown className="ml-2 h-4 w-4" />
+            </Button>
+          )
+        },
+      },
+      {
+        id: 'active',
+        accessorKey: 'is_active',
+        header: ({ column }) => {
+          return (
+            <Button
+              variant="ghost"
+              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+              className="-ml-4 cursor-pointer"
+            >
+              Active
+              <ArrowUpDown className="ml-2 h-4 w-4" />
+            </Button>
+          )
+        },
+        cell: ({ row }) => (row.original.is_active ? 'Yes' : 'No'),
+      },
+      {
+        id: 'actions',
+        enableHiding: false,
+        cell: ({ row }) => {
+          const item = row.original
+          return (
+            <div className="text-right">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-8 w-8 p-0 cursor-pointer">
+                    <span className="sr-only">Open menu</span>
+                    <EllipsisVerticalIcon className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    variant="destructive"
+                    className="cursor-pointer text-destructive"
+                    onClick={() => deleteProduct(item.id)}
+                  >
+                    <DeleteIcon className="mr-2 h-4 w-4" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )
+        },
+      },
+    ],
+    [currentPage, categories] // Include categories so names map correctly
+  )
 
   return (
     <div className="space-y-4">
@@ -104,58 +268,26 @@ export function ProductsPage() {
         </div>
 
         <div className="flex gap-2">
-          <Input placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          {/* Note: Removed the isolated search Input because it's built into the DataTable now */}
           <CreateProductDialog categories={categories} onCreate={createProduct} />
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>List</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="text-sm text-muted-foreground">Loading…</div>
-          ) : error ? (
-            <div className="text-sm text-destructive">{error}</div>
-          ) : filtered.length === 0 ? (
-            <div className="text-sm text-muted-foreground">No products.</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="py-2 text-left font-medium">Name</th>
-                    <th className="py-2 text-left font-medium">SKU</th>
-                    <th className="py-2 text-left font-medium">Category</th>
-                    <th className="py-2 text-left font-medium">Price</th>
-                    <th className="py-2 text-left font-medium">Stock</th>
-                    <th className="py-2 text-left font-medium">Active</th>
-                    <th className="py-2 text-right font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((p) => (
-                    <tr key={p.id} className="border-b">
-                      <td className="py-2">{p.name}</td>
-                      <td className="py-2 font-mono text-xs">{p.sku}</td>
-                      <td className="py-2">{categoryName(p.category_id)}</td>
-                      <td className="py-2">{p.price}</td>
-                      <td className="py-2">{p.stock}</td>
-                      <td className="py-2">{p.is_active ? 'Yes' : 'No'}</td>
-                      <td className="py-2 text-right">
-                        <Button variant="destructive" size="sm" onClick={() => deleteProduct(p.id)}>
-                          Delete
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <DataTable<Product, unknown>
+        data={items}
+        columns={columns}
+        currentPage={currentPage}
+        lastPage={lastPage}
+        search={search}
+        onSearch={setSearch}
+        onPageChange={(page) => void loadProducts(page)}
+        sorting={sorting}
+        onSortingChange={setSorting}
+        loading={loading}
+        emptyMessage="No products."
+        error={error}
+        title="List"
+      />
     </div>
   )
 }
@@ -219,7 +351,7 @@ function CreateProductDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>Create</Button>
+        <Button className="cursor-pointer">Create</Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -295,14 +427,15 @@ function CreateProductDialog({
           ) : null}
 
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" className="cursor-pointer" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
+            <Button disabled={saving} className="cursor-pointer">
+              {saving ? 'Saving…' : 'Save'}
+            </Button>
           </div>
         </form>
       </DialogContent>
     </Dialog>
   )
 }
-

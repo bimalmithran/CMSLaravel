@@ -233,22 +233,7 @@ export function MenuPage() {
             {
                 id: 'active', // Renamed ID from 'is_active' so the dropdown looks cleaner
                 accessorKey: 'is_active',
-                header: ({ column }) => {
-                    return (
-                        <Button
-                            variant="ghost"
-                            onClick={() =>
-                                column.toggleSorting(
-                                    column.getIsSorted() === 'asc',
-                                )
-                            }
-                            className="-ml-4 cursor-pointer"
-                        >
-                            Active
-                            <ArrowUpDown className="ml-2 h-4 w-4" />
-                        </Button>
-                    );
-                },
+                header: 'Active',
                 cell: ({ row }) => (row.original.is_active ? 'Yes' : 'No'),
             },
             {

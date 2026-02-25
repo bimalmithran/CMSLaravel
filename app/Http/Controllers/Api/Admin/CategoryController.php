@@ -14,6 +14,8 @@ class CategoryController extends Controller
     public function index(Request $request): JsonResponse
     {
         $search = $request->query('search');
+        $sortBy = $request->query('sort_by', 'id');
+        $sortOrder = $request->query('sort_dir', 'desc');
 
         $categories = Category::with('parent:id,name')
             ->when($search, function ($query, $search) {
@@ -23,7 +25,8 @@ class CategoryController extends Controller
                     $q->where('name', 'like', "%{$search}%");
                 });
             })
-            ->orderBy('order')->orderBy('name')->paginate(20);
+            ->orderBy($sortBy, $sortOrder)
+            ->paginate(20);
 
         return response()->json(['success' => true, 'data' => $categories]);
     }
