@@ -15,21 +15,16 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Field } from '@/components/ui/field';
 import { Button } from '../../../components/ui/button';
 import { Checkbox } from '../../../components/ui/checkbox';
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from '../../../components/ui/dialog';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
+
+import { CrudDialog, DialogFooter } from '../components/CrudDialog'; // NEW IMPORT
 import { DataTable } from '../components/DataTable';
 import { MediaPicker } from '../components/MediaPicker';
 import { apiFetch } from '../lib/api';
-import { Field } from '@/components/ui/field';
 
 type Category = {
     id: number;
@@ -57,18 +52,12 @@ export function CategoriesPage() {
     const [error, setError] = useState<string | null>(null);
     const [search, setSearch] = useState('');
 
-    // pagination & sorting state
     const [currentPage, setCurrentPage] = useState(1);
     const [lastPage, setLastPage] = useState(1);
     const [sorting, setSorting] = useState<SortingState>([]);
 
-    // currently selected items for view/edit dialogs
-    const [viewCategory, setViewCategory] = React.useState<Category | null>(
-        null,
-    );
-    const [editCategory, setEditCategory] = React.useState<Category | null>(
-        null,
-    );
+    const [viewCategory, setViewCategory] = React.useState<Category | null>(null);
+    const [editCategory, setEditCategory] = React.useState<Category | null>(null);
 
     const load = React.useCallback(
         async (page: number = 1) => {
@@ -122,6 +111,7 @@ export function CategoriesPage() {
         parent_id?: number | null;
         order?: number;
         is_active?: boolean;
+        image?: string;
     }) {
         const res = await apiFetch<Category>('/api/v1/admin/categories', {
             method: 'POST',
@@ -139,6 +129,7 @@ export function CategoriesPage() {
             parent_id?: number | null;
             order?: number;
             is_active?: boolean;
+            image?: string | null;
         },
     ) {
         const res = await apiFetch<Category>(`/api/v1/admin/categories/${id}`, {
@@ -179,11 +170,7 @@ export function CategoriesPage() {
                     return (
                         <Button
                             variant="ghost"
-                            onClick={() =>
-                                column.toggleSorting(
-                                    column.getIsSorted() === 'asc',
-                                )
-                            }
+                            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
                             className="-ml-4 cursor-pointer"
                         >
                             Name
@@ -209,11 +196,7 @@ export function CategoriesPage() {
                     return (
                         <Button
                             variant="ghost"
-                            onClick={() =>
-                                column.toggleSorting(
-                                    column.getIsSorted() === 'asc',
-                                )
-                            }
+                            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
                             className="-ml-4 cursor-pointer"
                         >
                             Order
@@ -237,30 +220,17 @@ export function CategoriesPage() {
                         <div className="text-right">
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        className="h-8 w-8 cursor-pointer p-0"
-                                    >
-                                        <span className="sr-only">
-                                            Open menu
-                                        </span>
+                                    <Button variant="ghost" className="h-8 w-8 cursor-pointer p-0">
+                                        <span className="sr-only">Open menu</span>
                                         <EllipsisVerticalIcon className="h-4 w-4" />
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                    <DropdownMenuItem
-                                        className="cursor-pointer"
-                                        onClick={() => setViewCategory(item)}
-                                    >
-                                        <ViewIcon className="mr-2 h-4 w-4" />
-                                        View
+                                    <DropdownMenuItem className="cursor-pointer" onClick={() => setViewCategory(item)}>
+                                        <ViewIcon className="mr-2 h-4 w-4" /> View
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        className="cursor-pointer"
-                                        onClick={() => setEditCategory(item)}
-                                    >
-                                        <EditIcon className="mr-2 h-4 w-4" />
-                                        Edit
+                                    <DropdownMenuItem className="cursor-pointer" onClick={() => setEditCategory(item)}>
+                                        <EditIcon className="mr-2 h-4 w-4" /> Edit
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem
@@ -268,8 +238,7 @@ export function CategoriesPage() {
                                         className="cursor-pointer text-destructive"
                                         onClick={() => deleteCategory(item.id)}
                                     >
-                                        <DeleteIcon className="mr-2 h-4 w-4" />
-                                        Delete
+                                        <DeleteIcon className="mr-2 h-4 w-4" /> Delete
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
@@ -286,16 +255,11 @@ export function CategoriesPage() {
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <div className="text-lg font-semibold">Categories</div>
-                    <div className="text-sm text-muted-foreground">
-                        Manage product categories.
-                    </div>
+                    <div className="text-sm text-muted-foreground">Manage product categories.</div>
                 </div>
 
                 <div className="flex gap-2">
-                    <CreateCategoryDialog
-                        onCreate={createCategory}
-                        parents={parents}
-                    />
+                    <CreateCategoryDialog onCreate={createCategory} parents={parents} />
                 </div>
             </div>
 
@@ -315,7 +279,6 @@ export function CategoriesPage() {
                 title="List"
             />
 
-            {/* dialogs triggered by table actions */}
             {viewCategory && (
                 <ViewCategoryDialog
                     category={viewCategory}
@@ -340,6 +303,10 @@ export function CategoriesPage() {
     );
 }
 
+// ------------------------------------------------------------------
+// REFACTORED DIALOGS BELOW
+// ------------------------------------------------------------------
+
 function CreateCategoryDialog({
     onCreate,
     parents,
@@ -362,7 +329,7 @@ function CreateCategoryDialog({
     const [isActive, setIsActive] = useState(true);
     const [saving, setSaving] = useState(false);
     const [err, setErr] = useState<string | null>(null);
-    const [image, setImage] = useState<string>(''); // NEW: Add image state
+    const [image, setImage] = useState<string>('');
 
     async function submit(e: React.SubmitEvent) {
         e.preventDefault();
@@ -375,7 +342,7 @@ function CreateCategoryDialog({
                 parent_id: parentId === '' ? null : parentId,
                 order,
                 is_active: isActive,
-                image: image || undefined, // Pass image URL if set
+                image: image || undefined,
             });
             setOpen(false);
             setName('');
@@ -383,7 +350,7 @@ function CreateCategoryDialog({
             setParentId('');
             setOrder(0);
             setIsActive(true);
-            setImage(''); // Reset image state
+            setImage('');
         } catch (e) {
             setErr(e instanceof Error ? e.message : 'Create failed');
         } finally {
@@ -392,119 +359,64 @@ function CreateCategoryDialog({
     }
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button className="cursor-pointer">Create</Button>
-            </DialogTrigger>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Create Category</DialogTitle>
-                </DialogHeader>
-                <form className="space-y-4" onSubmit={submit}>
+        <CrudDialog
+            open={open}
+            onOpenChange={setOpen}
+            title="Create Category"
+            trigger={<Button className="cursor-pointer">Create</Button>}
+        >
+            <form className="space-y-4" onSubmit={submit}>
+                <div className="space-y-2">
+                    <Label htmlFor="cat-name">Name</Label>
+                    <Input id="cat-name" value={name} onChange={(e) => setName(e.target.value)} required />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="cat-desc">Description</Label>
+                    <Input id="cat-desc" value={description} onChange={(e) => setDescription(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="cat-parent">Parent category</Label>
+                    <select
+                        id="cat-parent"
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                        value={parentId}
+                        onChange={(e) => setParentId(e.target.value === '' ? '' : Number(e.target.value))}
+                    >
+                        <option value="">(none)</option>
+                        {parents.map((p) => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                    </select>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
-                        <Label htmlFor="cat-name">Name</Label>
-                        <Input
-                            id="cat-name"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            required
-                        />
+                        <Label htmlFor="cat-order">Order</Label>
+                        <Input id="cat-order" type="number" value={String(order)} onChange={(e) => setOrder(Number(e.target.value))} />
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="cat-desc">Description</Label>
-                        <Input
-                            id="cat-desc"
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                        />
+                    <div className="mt-6 flex items-center">
+                        <Field orientation="horizontal" className="flex items-center gap-2">
+                            <Checkbox id="cat-active" checked={isActive} onCheckedChange={(v) => setIsActive(!!v)} />
+                            <Label htmlFor="cat-active" className="m-0 cursor-pointer font-normal">Active</Label>
+                        </Field>
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="cat-parent">Parent category</Label>
-                        <select
-                            id="cat-parent"
-                            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
-                            value={parentId}
-                            onChange={(e) => {
-                                const v = e.target.value;
-                                setParentId(v === '' ? '' : Number(v));
-                            }}
-                        >
-                            <option value="">(none)</option>
-                            {parents.map((p) => (
-                                <option key={p.id} value={p.id}>
-                                    {p.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-2">
-                            <Label htmlFor="cat-order">Order</Label>
-                            <Input
-                                id="cat-order"
-                                type="number"
-                                value={String(order)}
-                                onChange={(e) =>
-                                    setOrder(Number(e.target.value))
-                                }
-                            />
-                        </div>
-                        <div className="mt-6 flex items-center">
-                            <Field
-                                orientation="horizontal"
-                                className="flex items-center gap-2"
-                            >
-                                <Checkbox
-                                    id="cat-active"
-                                    checked={isActive}
-                                    onCheckedChange={(v) => setIsActive(!!v)}
-                                />
-                                <Label
-                                    htmlFor="cat-active"
-                                    className="m-0 cursor-pointer font-normal"
-                                >
-                                    Active
-                                </Label>
-                            </Field>
-                        </div>
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Category Image</Label>
-                        {/* NEW: Drop in the Media Picker! */}
-                        <MediaPicker
-                            value={image}
-                            onSelect={(url: React.SetStateAction<string>) =>
-                                setImage(url)
-                            }
-                        />
-                    </div>
+                </div>
+                <div className="space-y-2">
+                    <Label>Category Image</Label>
+                    <MediaPicker value={image} onSelect={setImage} />
+                </div>
 
-                    {err ? (
-                        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                            {err}
-                        </div>
-                    ) : null}
-
-                    <div className="flex justify-end gap-2">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="cursor-pointer"
-                            onClick={() => setOpen(false)}
-                        >
-                            Cancel
-                        </Button>
-                        <Button disabled={saving} className="cursor-pointer">
-                            {saving ? 'Saving…' : 'Save'}
-                        </Button>
+                {err && (
+                    <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                        {err}
                     </div>
-                </form>
-            </DialogContent>
-        </Dialog>
+                )}
+
+                <DialogFooter onCancel={() => setOpen(false)} isSaving={saving} />
+            </form>
+        </CrudDialog>
     );
 }
 
-// view-only dialog
 function ViewCategoryDialog({
     category,
     open,
@@ -515,48 +427,31 @@ function ViewCategoryDialog({
     onOpenChange: (open: boolean) => void;
 }) {
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>View Category</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                    <div>
-                        <strong>Name:</strong> {category.name}
-                    </div>
-                    <div>
-                        <strong>Slug:</strong> {category.slug}
-                    </div>
-                    <div>
-                        <strong>Description:</strong>{' '}
-                        {category.description || '—'}
-                    </div>
-                    <div>
-                        <strong>Parent:</strong>{' '}
-                        {category.parent?.name ?? '(none)'}
-                    </div>
-                    <div>
-                        <strong>Order:</strong> {category.order}
-                    </div>
-                    <div>
-                        <strong>Active:</strong>{' '}
-                        {category.is_active ? 'Yes' : 'No'}
-                    </div>
+        <CrudDialog open={open} onOpenChange={onOpenChange} title="View Category">
+            <div className="space-y-4">
+                <div>
+                    <strong>Image:</strong>
+                    {category.image ? (
+                        <div className="mt-2 h-24 w-24 overflow-hidden rounded-md border bg-muted flex items-center justify-center">
+                            <img src={category.image} alt={category.name} className="h-full w-full object-cover" />
+                        </div>
+                    ) : (
+                        <span className="ml-2 text-muted-foreground">(none)</span>
+                    )}
                 </div>
-                <div className="mt-4 flex justify-end">
-                    <Button
-                        variant="outline"
-                        onClick={() => onOpenChange(false)}
-                    >
-                        Close
-                    </Button>
-                </div>
-            </DialogContent>
-        </Dialog>
+                <div><strong>Name:</strong> {category.name}</div>
+                <div><strong>Slug:</strong> {category.slug}</div>
+                <div><strong>Description:</strong> {category.description || '—'}</div>
+                <div><strong>Parent:</strong> {category.parent?.name ?? '(none)'}</div>
+                <div><strong>Order:</strong> {category.order}</div>
+                <div><strong>Active:</strong> {category.is_active ? 'Yes' : 'No'}</div>
+            </div>
+            
+            <DialogFooter onCancel={() => onOpenChange(false)} showSave={false} cancelText="Close" />
+        </CrudDialog>
     );
 }
 
-// edit dialog
 function EditCategoryDialog({
     category,
     parents,
@@ -576,30 +471,30 @@ function EditCategoryDialog({
             parent_id?: number | null;
             order?: number;
             is_active?: boolean;
+            image?: string | null;
         },
     ) => Promise<void>;
 }) {
     const [name, setName] = useState(category.name);
     const [description, setDescription] = useState(category.description);
-    const [parentId, setParentId] = useState<number | ''>(
-        category.parent_id === null ? '' : category.parent_id,
-    );
+    const [parentId, setParentId] = useState<number | ''>(category.parent_id === null ? '' : category.parent_id);
     const [order, setOrder] = useState<number>(category.order);
     const [isActive, setIsActive] = useState(category.is_active);
+    const [image, setImage] = useState<string>(category.image || '');
     const [saving, setSaving] = useState(false);
     const [err, setErr] = useState<string | null>(null);
 
-    // reset when category changes (e.g. opening a different item)
     useEffect(() => {
         setName(category.name);
         setDescription(category.description);
         setParentId(category.parent_id === null ? '' : category.parent_id);
         setOrder(category.order);
         setIsActive(category.is_active);
+        setImage(category.image || '');
         setErr(null);
     }, [category]);
 
-    async function submit(e: React.FormEvent) {
+    async function submit(e: React.SubmitEvent) {
         e.preventDefault();
         setSaving(true);
         setErr(null);
@@ -610,6 +505,7 @@ function EditCategoryDialog({
                 parent_id: parentId === '' ? null : parentId,
                 order,
                 is_active: isActive,
+                image: image || null,
             });
             onOpenChange(false);
         } catch (e) {
@@ -620,97 +516,55 @@ function EditCategoryDialog({
     }
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Edit Category</DialogTitle>
-                </DialogHeader>
-                <form className="space-y-4" onSubmit={submit}>
+        <CrudDialog open={open} onOpenChange={onOpenChange} title="Edit Category">
+            <form className="space-y-4" onSubmit={submit}>
+                <div className="space-y-2">
+                    <Label htmlFor="edit-name">Name</Label>
+                    <Input id="edit-name" value={name} onChange={(e) => setName(e.target.value)} required />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="edit-desc">Description</Label>
+                    <Input id="edit-desc" value={description} onChange={(e) => setDescription(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="edit-parent">Parent Category</Label>
+                    <select
+                        id="edit-parent"
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                        value={parentId}
+                        onChange={(e) => setParentId(e.target.value === '' ? '' : Number(e.target.value))}
+                    >
+                        <option value="">(none)</option>
+                        {parents.map((p) => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                    </select>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
-                        <Label htmlFor="edit-name">Name</Label>
-                        <Input
-                            id="edit-name"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            required
-                        />
+                        <Label htmlFor="edit-order">Order</Label>
+                        <Input id="edit-order" type="number" value={String(order)} onChange={(e) => setOrder(Number(e.target.value))} />
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="edit-desc">Description</Label>
-                        <Input
-                            id="edit-desc"
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="edit-parent">Parent Category</Label>
-                        <select
-                            id="edit-parent"
-                            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
-                            value={parentId}
-                            onChange={(e) => {
-                                const v = e.target.value;
-                                setParentId(v === '' ? '' : Number(v));
-                            }}
-                        >
-                            <option value="">(none)</option>
-                            {parents.map((p) => (
-                                <option key={p.id} value={p.id}>
-                                    {p.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-2">
-                            <Label htmlFor="edit-order">Order</Label>
-                            <Input
-                                id="edit-order"
-                                type="number"
-                                value={String(order)}
-                                onChange={(e) =>
-                                    setOrder(Number(e.target.value))
-                                }
-                            />
-                        </div>
-                        <div className="mt-6 flex items-center">
-                            <div className="flex items-center gap-2">
-                                <Checkbox
-                                    id="edit-active"
-                                    checked={isActive}
-                                    onCheckedChange={(v) => setIsActive(!!v)}
-                                />
-                                <Label
-                                    htmlFor="edit-active"
-                                    className="m-0 cursor-pointer font-normal"
-                                >
-                                    Active
-                                </Label>
-                            </div>
+                    <div className="mt-6 flex items-center">
+                        <div className="flex items-center gap-2">
+                            <Checkbox id="edit-active" checked={isActive} onCheckedChange={(v) => setIsActive(!!v)} />
+                            <Label htmlFor="edit-active" className="m-0 cursor-pointer font-normal">Active</Label>
                         </div>
                     </div>
+                </div>
+                <div className="space-y-2">
+                    <Label>Category Image</Label>
+                    <MediaPicker value={image} onSelect={setImage} />
+                </div>
 
-                    {err ? (
-                        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                            {err}
-                        </div>
-                    ) : null}
-
-                    <div className="flex justify-end gap-2">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => onOpenChange(false)}
-                        >
-                            Cancel
-                        </Button>
-                        <Button disabled={saving}>
-                            {saving ? 'Saving…' : 'Save'}
-                        </Button>
+                {err && (
+                    <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                        {err}
                     </div>
-                </form>
-            </DialogContent>
-        </Dialog>
+                )}
+
+                <DialogFooter onCancel={() => onOpenChange(false)} isSaving={saving} />
+            </form>
+        </CrudDialog>
     );
 }
