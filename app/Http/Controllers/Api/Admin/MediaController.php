@@ -3,16 +3,19 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Models\Media;
-use Illuminate\Support\Facades\Storage;
+use App\Http\Requests\StoreMediaRequest;
+use App\Services\MediaService;
+use Illuminate\Http\JsonResponse;
 
 class MediaController extends Controller
 {
-    public function index()
+    public function __construct(
+        private readonly MediaService $mediaService
+    ) {}
+
+    public function index(): JsonResponse
     {
-        // Fetch all media, newest first
-        $media = Media::orderBy('created_at', 'desc')->paginate(24);
+        $media = $this->mediaService->getPaginatedMedia();
 
         return response()->json([
             'success' => true,
@@ -20,41 +23,19 @@ class MediaController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreMediaRequest $request): JsonResponse
     {
-        $request->validate(['file' => 'required|file|max:5120']); // 5MB limit
+        $media = $this->mediaService->uploadMedia($request->file('file'));
 
-        $file = $request->file('file');
-        $path = $file->store('uploads', 'public');
-
-        $media = Media::create([
-            'file_name' => $file->getClientOriginalName(),
-            'path' => Storage::url($path),
-            'mime_type' => $file->getMimeType(),
-            'size' => $file->getSize(),
+        return response()->json([
+            'success' => true, 
+            'data' => $media
         ]);
-
-        return response()->json(['success' => true, 'data' => $media]);
     }
 
-    public function destroy($id)
+    public function destroy(int $id): JsonResponse
     {
-        $media = Media::find($id);
-
-        if (!$media) {
-            return response()->json([
-                'success' => false,
-                'message' => 'File not found'
-            ], 404);
-        }
-
-        // Delete the physical file from storage
-        // Assuming your path looks like "/storage/uploads/..." we need to clean it to delete
-        $relativePath = str_replace('/storage/', '', $media->path);
-        Storage::disk('public')->delete($relativePath);
-
-        // Delete the database record
-        $media->delete();
+        $this->mediaService->deleteMedia($id);
 
         return response()->json([
             'success' => true,

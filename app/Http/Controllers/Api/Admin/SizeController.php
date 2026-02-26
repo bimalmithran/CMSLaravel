@@ -3,69 +3,53 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Size;
+use App\Http\Requests\StoreSizeRequest;
+use App\Http\Requests\UpdateSizeRequest;
+use App\Services\SizeService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class SizeController extends Controller
 {
-    public function index(Request $request)
+    public function __construct(
+        private readonly SizeService $sizeService
+    ) {}
+
+    public function index(Request $request): JsonResponse
     {
-        $query = Size::query();
-
-        if ($request->has('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%')
-                ->orWhere('type', 'like', '%' . $request->search . '%');
-        }
-
-        if ($request->has('sort_by') && $request->has('sort_dir')) {
-            $query->orderBy($request->sort_by, $request->sort_dir);
-        } else {
-            $query->orderBy('type', 'asc')->orderBy('name', 'asc');
-        }
+        $sizes = $this->sizeService->getPaginatedSizes($request->only(['search', 'sort_by', 'sort_dir']));
 
         return response()->json([
             'success' => true,
-            'data' => $query->paginate(10)
+            'data' => $sizes
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreSizeRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:sizes,name',
-            'type' => 'required|string|max:50', // e.g., 'ring', 'bangle', 'chain'
-        ]);
-
-        $size = Size::create($validated);
+        $size = $this->sizeService->createSize($request->validated());
 
         return response()->json(['success' => true, 'data' => $size]);
     }
 
-    public function show($id)
+    public function show($id): JsonResponse
     {
-        return response()->json([
-            'success' => true,
-            'data' => Size::findOrFail($id)
-        ]);
-    }
-
-    public function update(Request $request, $id)
-    {
-        $size = Size::findOrFail($id);
-
-        $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:sizes,name,' . $size->id,
-            'type' => 'required|string|max:50',
-        ]);
-
-        $size->update($validated);
+        $size = $this->sizeService->getSizeById($id);
 
         return response()->json(['success' => true, 'data' => $size]);
     }
 
-    public function destroy($id)
+    public function update(UpdateSizeRequest $request, $id): JsonResponse
     {
-        Size::findOrFail($id)->delete();
+        $size = $this->sizeService->updateSize($id, $request->validated());
+
+        return response()->json(['success' => true, 'data' => $size]);
+    }
+
+    public function destroy($id): JsonResponse
+    {
+        $this->sizeService->deleteSize($id);
+
         return response()->json(['success' => true, 'message' => 'Size deleted']);
     }
 }

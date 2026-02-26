@@ -3,76 +3,53 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Brand;
+use App\Http\Requests\StoreBrandRequest;
+use App\Http\Requests\UpdateBrandRequest;
+use App\Services\BrandService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
 class BrandController extends Controller
 {
-    public function index(Request $request)
+    public function __construct(
+        private readonly BrandService $brandService
+    ) {}
+
+    public function index(Request $request): JsonResponse
     {
-        $query = Brand::query();
+        $brands = $this->brandService->getPaginatedBrands($request->only(['search', 'sort_by', 'sort_dir']));
 
-        if ($request->has('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
-        }
-
-        if ($request->has('sort_by') && $request->has('sort_dir')) {
-            $query->orderBy($request->sort_by, $request->sort_dir);
-        } else {
-            $query->orderBy('name', 'asc');
-        }
-
-        // Return paginated for the DataTable
         return response()->json([
             'success' => true,
-            'data' => $query->paginate(10)
+            'data' => $brands
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreBrandRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:brands,name',
-            'logo' => 'nullable|string|max:255',
-            'is_active' => 'boolean',
-        ]);
-
-        $validated['slug'] = Str::slug($validated['name']);
-
-        $brand = Brand::create($validated);
+        $brand = $this->brandService->createBrand($request->validated());
 
         return response()->json(['success' => true, 'data' => $brand]);
     }
 
-    public function show($id)
+    public function show($id): JsonResponse
     {
-        return response()->json([
-            'success' => true,
-            'data' => Brand::findOrFail($id)
-        ]);
-    }
-
-    public function update(Request $request, $id)
-    {
-        $brand = Brand::findOrFail($id);
-
-        $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:brands,name,' . $brand->id,
-            'logo' => 'nullable|string|max:255',
-            'is_active' => 'boolean',
-        ]);
-
-        $validated['slug'] = Str::slug($validated['name']);
-
-        $brand->update($validated);
+        $brand = $this->brandService->getBrandById($id);
 
         return response()->json(['success' => true, 'data' => $brand]);
     }
 
-    public function destroy($id)
+    public function update(UpdateBrandRequest $request, $id): JsonResponse
     {
-        Brand::findOrFail($id)->delete();
+        $brand = $this->brandService->updateBrand($id, $request->validated());
+
+        return response()->json(['success' => true, 'data' => $brand]);
+    }
+
+    public function destroy($id): JsonResponse
+    {
+        $this->brandService->deleteBrand($id);
+
         return response()->json(['success' => true, 'message' => 'Brand deleted']);
     }
 }
