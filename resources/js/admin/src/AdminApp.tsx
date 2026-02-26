@@ -12,7 +12,7 @@ import { LoginPage } from './pages/Login'
 import { MediaPage } from './pages/Media'
 import { MenuPage } from './pages/Menus'
 import { OrdersPage } from './pages/Orders'
-import { ProductsPage } from './pages/Products'
+import { ProductsPage } from './pages/Products/ProductsPage'
 import { SettingsPage } from './pages/Settings'
 import { SizesPage } from './pages/Sizes'
 

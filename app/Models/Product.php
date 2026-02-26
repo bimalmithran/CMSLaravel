@@ -80,7 +80,7 @@ class Product extends Model
 
     public function sizes(): BelongsToMany
     {
-        return $this->belongsToMany(Size::class, 'product_size')
+        return $this->belongsToMany(Size::class, 'product_sizes')
             ->withPivot(['id', 'stock', 'weight_adjustment', 'price_adjustment'])
             ->withTimestamps();
     }

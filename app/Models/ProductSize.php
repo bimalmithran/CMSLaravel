@@ -6,9 +6,8 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
 
 // Extending Pivot instead of Model gives it extra built-in functionality for intermediate tables
 class ProductSize extends Pivot
-{
-    // Explicitly define the table name since it breaks standard pluralization rules
-    protected $table = 'product_size'; 
+{   
+    protected $table = 'product_sizes';
     
     // We want the ID to auto-increment for this pivot to make direct updates easier
     public $incrementing = true; 
