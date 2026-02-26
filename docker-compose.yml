@@ -1,0 +1,56 @@
+services:
+  app:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    container_name: ttshoppingcart_app
+    restart: unless-stopped
+    working_dir: /app
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8000
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: ttshoppingcart
+      DB_USERNAME: ttshop_user
+      DB_PASSWORD: ttshop_password
+    volumes:
+      - ./:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    command: >
+      sh -c "composer install &&
+        php artisan key:generate --force &&
+        php artisan storage:link && 
+        php artisan migrate --seed --force &&
+        php artisan serve --host=0.0.0.0 --port=8000"
+
+  mysql:
+    image: mysql:8.0
+    container_name: ttshoppingcart_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ttshoppingcart
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_USER: ttshop_user
+      MYSQL_PASSWORD: ttshop_password
+      MYSQL_ALLOW_EMPTY_PASSWORD: 0
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-hmysql", "-uttshop_user", "-pttshop_password"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3307:3306"
+
+volumes:
+  mysql_data:
+    driver: local
+

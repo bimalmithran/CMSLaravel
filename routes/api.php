@@ -5,11 +5,14 @@ use App\Http\Controllers\Api\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Api\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Api\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
+use App\Http\Controllers\Api\Admin\BrandController as AdminBrandController;
+use App\Http\Controllers\Api\Admin\SizeController as AdminSizeController;
+use App\Http\Controllers\Api\Admin\ProductTypeController as AdminProductTypeController;
 use App\Http\Controllers\Api\Admin\ProductController as AdminProductController;
-use App\Http\Controllers\Api\Admin\MenuController as MenuController;
+use App\Http\Controllers\Api\Admin\MenuController as AdminMenuController;
 use App\Http\Controllers\Api\AuthController as CustomerAuthController;
-use App\Http\Controllers\Api\Admin\MediaController as MediaController;
-use App\Http\Controllers\Api\Admin\SettingController as SettingController;
+use App\Http\Controllers\Api\Admin\MediaController as AdminMediaController;
+use App\Http\Controllers\Api\Admin\SettingController as AdminSettingController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\OrderController;
@@ -69,12 +72,21 @@ Route::prefix('v1')->group(function () {
             Route::get('/auth/me', [AdminAuthController::class, 'me']);
             Route::post('/auth/logout', [AdminAuthController::class, 'logout']);
 
+            // Brands
+            Route::apiResource('brands', AdminBrandController::class);
+
+            // Sizes
+            Route::apiResource('sizes', AdminSizeController::class);
+
+            // Product Types (Read-only for the dropdowns)
+            Route::get('product-types/list', [AdminProductTypeController::class, 'index']);
+
             // Admin catalog CRUD
             Route::get('/categories/list', [AdminCategoryController::class, 'list']);
             Route::apiResource('categories', AdminCategoryController::class);
             Route::apiResource('products', AdminProductController::class);
-            Route::get('/menus/list', [MenuController::class, 'list']);
-            Route::apiResource('menus', MenuController::class);
+            Route::get('/menus/list', [AdminMenuController::class, 'list']);
+            Route::apiResource('menus', AdminMenuController::class);
 
             // Admin users & customers
             Route::apiResource('admin-users', AdminUserController::class)->except(['edit', 'create']);
@@ -87,11 +99,11 @@ Route::prefix('v1')->group(function () {
             Route::put('/orders/{id}/payment-status', [AdminOrderController::class, 'updatePaymentStatus']);
 
             // Admin media upload
-            Route::apiResource('media', MediaController::class)->only(['index', 'store', 'destroy']);
+            Route::apiResource('media', AdminMediaController::class)->only(['index', 'store', 'destroy']);
 
             // Admin settings
-            Route::get('/settings', [SettingController::class, 'index']);
-            Route::put('/settings/bulk', [SettingController::class, 'bulkUpdate']);
+            Route::get('/settings', [AdminSettingController::class, 'index']);
+            Route::put('/settings/bulk', [AdminSettingController::class, 'bulkUpdate']);
         });
     });
 });

@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { AdminLayout } from './layout/AdminLayout'
 import { AdminUsersPage } from './pages/AdminUsers'
+import { BrandsPage } from './pages/Brands'
 import { CategoriesPage } from './pages/Categories'
 import { CustomersPage } from './pages/Customers'
 import { DashboardPage } from './pages/Dashboard'
@@ -13,6 +14,7 @@ import { MenuPage } from './pages/Menus'
 import { OrdersPage } from './pages/Orders'
 import { ProductsPage } from './pages/Products'
 import { SettingsPage } from './pages/Settings'
+import { SizesPage } from './pages/Sizes'
 
 export function AdminApp() {
   return (
@@ -25,6 +27,8 @@ export function AdminApp() {
             <Route path="/" element={<DashboardPage />} />
             <Route path='/menus' element={<MenuPage />} />
             <Route path="/categories" element={<CategoriesPage />} />
+            <Route path="/brands" element={<BrandsPage />} />
+            <Route path="/sizes" element={<SizesPage />} />
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/orders" element={<OrdersPage />} />
             <Route path="/admin-users" element={<AdminUsersPage />} />
