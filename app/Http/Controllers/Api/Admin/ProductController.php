@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductType;
+use App\Services\ProductSpecs\SpecFactory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -13,7 +14,6 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        // Eager load the basic relations needed for the data table
         $query = Product::with(['category', 'brand', 'productType']);
 
         if ($request->has('search')) {
@@ -36,7 +36,6 @@ class ProductController extends Controller
 
     public function show($id)
     {
-        // Load EVERYTHING so the frontend edit form has all the data it needs
         $product = Product::with([
             'category',
             'brand',
@@ -47,203 +46,80 @@ class ProductController extends Controller
             'sizes'
         ])->findOrFail($id);
 
-        return response()->json([
-            'success' => true,
-            'data' => $product
-        ]);
+        return response()->json(['success' => true, 'data' => $product]);
     }
 
     public function store(Request $request)
     {
-        // 1. Validate Base Product Fields
-        $baseData = $request->validate([
-            'category_id' => 'required|exists:categories,id',
-            'brand_id' => 'nullable|exists:brands,id',
-            'product_type_id' => 'required|exists:product_types,id',
-            'name' => 'required|string|max:255|unique:products,name',
-            'sku' => 'required|string|max:100|unique:products,sku',
-            'short_description' => 'nullable|string',
-            'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
-            'discount_price' => 'nullable|numeric|min:0',
-            'stock' => 'required|integer|min:0',
-            'image' => 'nullable|string',
-            'gallery' => 'nullable|array',
-            'is_featured' => 'boolean',
-            'is_active' => 'boolean',
-        ]);
-
+        // 1. Validate Base Fields
+        $baseData = $this->validateBaseProduct($request);
         $baseData['slug'] = Str::slug($baseData['name']);
 
-        // Fetch the type to know which spec table we are dealing with
+        // 2. Resolve the Strategy based on Product Type
         $productType = ProductType::findOrFail($request->product_type_id);
+        $strategy = SpecFactory::make($productType->slug);
 
-        // START TRANSACTION: If specs fail, the base product won't be saved orphaned.
+        // 3. Validate Specs BEFORE starting the transaction
+        // (If validation fails, Laravel automatically returns a 422 JSON response)
+        $rawSpecs = $request->input('specs', []);
+        $validatedSpecs = $strategy->validate($rawSpecs);
+
         DB::beginTransaction();
 
         try {
-            // 2. Create the Base Product
+            // Save Base
             $product = Product::create($baseData);
 
-            // 3. Route to the correct Subtype table based on the Product Type Slug
-            switch ($productType->slug) {
-                case 'jewelry':
-                    $specData = $request->validate([
-                        'specs.huid' => 'nullable|string|max:6|unique:jewelry_specs,huid',
-                        'specs.metal_type' => 'nullable|string',
-                        'specs.metal_color' => 'nullable|string',
-                        'specs.purity' => 'nullable|string',
-                        'specs.gender' => 'nullable|string',
-                        'specs.gross_weight' => 'nullable|numeric',
-                        'specs.net_weight' => 'nullable|numeric',
-                        'specs.making_charge' => 'nullable|numeric',
-                        'specs.making_charge_type' => 'nullable|in:flat,percent',
-                    ]);
-                    if (!empty($specData['specs'])) {
-                        $product->jewelrySpec()->create($specData['specs']);
-                    }
-                    break;
+            // Save Specs via Strategy
+            $strategy->store($product, $validatedSpecs);
 
-                case 'watch':
-                    $specData = $request->validate([
-                        'specs.movement_type' => 'nullable|string',
-                        'specs.dial_color' => 'nullable|string',
-                        'specs.strap_material' => 'nullable|string',
-                        'specs.glass_material' => 'nullable|string',
-                        'specs.water_resistance' => 'nullable|string',
-                        'specs.case_size' => 'nullable|string',
-                        'specs.warranty_period' => 'nullable|string',
-                    ]);
-                    if (!empty($specData['specs'])) {
-                        $product->watchSpec()->create($specData['specs']);
-                    }
-                    break;
-
-                case 'diamond':
-                    $specData = $request->validate([
-                        'specs.diamond_clarity' => 'nullable|string',
-                        'specs.diamond_color' => 'nullable|string',
-                        'specs.diamond_cut' => 'nullable|string',
-                        'specs.diamond_setting' => 'nullable|string',
-                        'specs.diamond_count' => 'nullable|integer',
-                    ]);
-                    if (!empty($specData['specs'])) {
-                        $product->diamondSpec()->create($specData['specs']);
-                    }
-                    break;
-            }
-
-            // 4. Handle Sizes / Variations
-            // Expecting an array like: [{ size_id: 1, stock: 5, price_adjustment: 0 }]
-            if ($request->has('sizes') && is_array($request->sizes)) {
-                $syncData = [];
-                foreach ($request->sizes as $size) {
-                    $syncData[$size['size_id']] = [
-                        'stock' => $size['stock'] ?? 0,
-                        'weight_adjustment' => $size['weight_adjustment'] ?? 0,
-                        'price_adjustment' => $size['price_adjustment'] ?? 0,
-                    ];
-                }
-                $product->sizes()->sync($syncData);
-            }
+            // Sync Sizes
+            $this->syncSizes($product, $request->input('sizes', []));
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'data' => $product->load(['jewelrySpec', 'watchSpec', 'sizes'])
+                'data' => $product->load(['jewelrySpec', 'watchSpec', 'diamondSpec', 'sizes'])
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            throw $e; // Laravel will catch this and return a 500 error
+            throw $e;
         }
     }
 
     public function update(Request $request, $id)
     {
         $product = Product::findOrFail($id);
-        $productType = ProductType::findOrFail($request->product_type_id ?? $product->product_type_id);
 
-        $baseData = $request->validate([
-            'category_id' => 'required|exists:categories,id',
-            'brand_id' => 'nullable|exists:brands,id',
-            'name' => 'required|string|max:255|unique:products,name,' . $product->id,
-            'sku' => 'required|string|max:100|unique:products,sku,' . $product->id,
-            'short_description' => 'nullable|string',
-            'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
-            'discount_price' => 'nullable|numeric|min:0',
-            'stock' => 'required|integer|min:0',
-            'image' => 'nullable|string',
-            'gallery' => 'nullable|array',
-            'is_featured' => 'boolean',
-            'is_active' => 'boolean',
-        ]);
-
+        // 1. Validate Base Fields
+        $baseData = $this->validateBaseProduct($request, $product->id);
         $baseData['slug'] = Str::slug($baseData['name']);
+
+        // 2. Resolve Strategy (Product Type cannot be changed safely, we rely on the existing one)
+        $productType = ProductType::findOrFail($product->product_type_id);
+        $strategy = SpecFactory::make($productType->slug);
+
+        // 3. Validate Specs
+        $rawSpecs = $request->input('specs', []);
+        $validatedSpecs = $strategy->validate($rawSpecs, $product);
 
         DB::beginTransaction();
 
         try {
             $product->update($baseData);
 
-            // Update the correct Subtype
-            switch ($productType->slug) {
-                case 'jewelry':
-                    $specData = $request->validate([
-                        'specs.huid' => 'nullable|string|max:6|unique:jewelry_specs,huid,' . optional($product->jewelrySpec)->id,
-                        'specs.metal_type' => 'nullable|string',
-                        // ... (keep the rest of your jewelry validation rules)
-                        'specs.making_charge_type' => 'nullable|in:flat,percent',
-                    ]);
-                    if (!empty($specData['specs'])) {
-                        $product->jewelrySpec()->updateOrCreate(['product_id' => $product->id], $specData['specs']);
-                    }
-                    break;
-
-                case 'watch':
-                    $specData = $request->validate([
-                        'specs.movement_type' => 'nullable|string',
-                        // ... (keep the rest of your watch validation rules)
-                        'specs.warranty_period' => 'nullable|string',
-                    ]);
-                    if (!empty($specData['specs'])) {
-                        $product->watchSpec()->updateOrCreate(['product_id' => $product->id], $specData['specs']);
-                    }
-                    break;
-
-                case 'diamond':
-                    $specData = $request->validate([
-                        'specs.diamond_clarity' => 'nullable|string',
-                        'specs.diamond_color' => 'nullable|string',
-                        'specs.diamond_cut' => 'nullable|string',
-                        'specs.diamond_setting' => 'nullable|string',
-                        'specs.diamond_count' => 'nullable|integer',
-                    ]);
-                    if (!empty($specData['specs'])) {
-                        $product->diamondSpec()->updateOrCreate(['product_id' => $product->id], $specData['specs']);
-                    }
-                    break;
-            }
+            // Update Specs via Strategy
+            $strategy->update($product, $validatedSpecs);
 
             // Sync Sizes
-            if ($request->has('sizes') && is_array($request->sizes)) {
-                $syncData = [];
-                foreach ($request->sizes as $size) {
-                    $syncData[$size['size_id']] = [
-                        'stock' => $size['stock'] ?? 0,
-                        'weight_adjustment' => $size['weight_adjustment'] ?? 0,
-                        'price_adjustment' => $size['price_adjustment'] ?? 0,
-                    ];
-                }
-                $product->sizes()->sync($syncData);
-            }
+            $this->syncSizes($product, $request->input('sizes', []));
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'data' => $product->fresh(['jewelrySpec', 'watchSpec', 'sizes'])
+                'data' => $product->fresh(['jewelrySpec', 'watchSpec', 'diamondSpec', 'sizes'])
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -253,11 +129,61 @@ class ProductController extends Controller
 
     public function destroy($id)
     {
-        // Because we used ON DELETE CASCADE in our migrations,
-        // deleting the base product will automatically delete the linked 
-        // jewelry_specs, watch_specs, and product_size pivot records!
         Product::findOrFail($id)->delete();
-
         return response()->json(['success' => true, 'message' => 'Product deleted successfully']);
+    }
+
+    /**
+     * Extracted to keep the controller clean (SRP)
+     */
+    private function validateBaseProduct(Request $request, ?int $ignoreId = null): array
+    {
+        $nameRule = 'required|string|max:255|unique:products,name';
+        $skuRule = 'required|string|max:100|unique:products,sku';
+
+        if ($ignoreId) {
+            $nameRule .= ',' . $ignoreId;
+            $skuRule .= ',' . $ignoreId;
+        }
+
+        return $request->validate([
+            'category_id' => 'required|exists:categories,id',
+            'brand_id' => 'nullable|exists:brands,id',
+            'product_type_id' => $ignoreId ? 'prohibited' : 'required|exists:product_types,id', // Cannot update type later
+            'name' => $nameRule,
+            'sku' => $skuRule,
+            'short_description' => 'nullable|string',
+            'description' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
+            'discount_price' => 'nullable|numeric|min:0',
+            'stock' => 'required|integer|min:0',
+            'image' => 'nullable|string',
+            'gallery' => 'nullable|array',
+            'is_featured' => 'boolean',
+            'is_active' => 'boolean',
+        ]);
+    }
+
+    /**
+     * Extracted to keep the controller clean (SRP)
+     */
+    private function syncSizes(Product $product, array $sizes): void
+    {
+        if (empty($sizes)) {
+            $product->sizes()->detach();
+            return;
+        }
+
+        $syncData = [];
+        foreach ($sizes as $size) {
+            if (isset($size['size_id'])) {
+                $syncData[$size['size_id']] = [
+                    'stock' => $size['stock'] ?? 0,
+                    'weight_adjustment' => $size['weight_adjustment'] ?? 0,
+                    'price_adjustment' => $size['price_adjustment'] ?? 0,
+                ];
+            }
+        }
+        $product->sizes()->sync($syncData);
     }
 }
