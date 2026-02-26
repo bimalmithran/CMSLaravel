@@ -8,41 +8,22 @@ import {
 } from 'lucide-react';
 import React, { useEffect, useState, useMemo } from 'react';
 
-import { Button } from '../../../components/ui/button';
+import { Button } from '../../../../components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from '../../../components/ui/dropdown-menu';
-import { Input } from '../../../components/ui/input';
-import { Label } from '../../../components/ui/label';
+} from '../../../../components/ui/dropdown-menu';
 
-import { CrudDialog, DialogFooter } from '../components/CrudDialog';
-import { DataTable } from '../components/DataTable';
-import { apiFetch } from '../lib/api';
+import { DataTable } from '../../components/DataTable';
+import { apiFetch } from '../../lib/api';
+import type { Size, SizePayload, PaginatedResponse } from '../../types/size';
 
-type Size = {
-    id: number;
-    name: string;
-    type: string;
-};
-
-type SizePayload = {
-    name: string;
-    type: string;
-};
-
-type PaginatedResponse<T> = {
-    data: T[];
-    current_page: number;
-    last_page: number;
-    total: number;
-};
-
-// Hardcoded types to keep the UI clean
-const SIZE_TYPES = ['ring', 'bangle', 'chain', 'necklace', 'bracelet', 'watch'];
+import { CreateSizeDialog } from './components/CreateSizeDialog';
+import { EditSizeDialog } from './components/EditSizeDialog';
+import { ViewSizeDialog } from './components/ViewSizeDialog';
 
 export function SizesPage() {
     const [items, setItems] = useState<Size[]>([]);
@@ -62,14 +43,11 @@ export function SizesPage() {
             setLoading(true);
             setError(null);
             try {
-                const params = new URLSearchParams();
-                params.append('page', String(page));
+                const params = new URLSearchParams({ page: String(page) });
                 if (search) params.append('search', search);
-
                 if (sorting.length > 0) {
-                    const activeSort = sorting[0];
-                    params.append('sort_by', activeSort.id);
-                    params.append('sort_dir', activeSort.desc ? 'desc' : 'asc');
+                    params.append('sort_by', sorting[0].id);
+                    params.append('sort_dir', sorting[0].desc ? 'desc' : 'asc');
                 }
 
                 const res = await apiFetch<PaginatedResponse<Size>>(
@@ -127,10 +105,13 @@ export function SizesPage() {
                 id: 'index',
                 header: '#',
                 enableHiding: false,
-                cell: ({ row, table }) => {
-                    const meta = table.options.meta as { currentPage: number };
-                    return (meta.currentPage - 1) * 10 + row.index + 1;
-                },
+                cell: ({ row, table }) =>
+                    ((table.options.meta as { currentPage: number })
+                        .currentPage -
+                        1) *
+                        10 +
+                    row.index +
+                    1,
             },
             {
                 id: 'type',
@@ -178,9 +159,6 @@ export function SizesPage() {
                                         variant="ghost"
                                         className="h-8 w-8 cursor-pointer p-0"
                                     >
-                                        <span className="sr-only">
-                                            Open menu
-                                        </span>
                                         <EllipsisVerticalIcon className="h-4 w-4" />
                                     </Button>
                                 </DropdownMenuTrigger>
@@ -262,188 +240,5 @@ export function SizesPage() {
                 />
             )}
         </div>
-    );
-}
-
-// --- DIALOGS ---
-
-function CreateSizeDialog({
-    onCreate,
-}: {
-    onCreate: (data: SizePayload) => Promise<void>;
-}) {
-    const [open, setOpen] = useState(false);
-    const [name, setName] = useState('');
-    const [type, setType] = useState(SIZE_TYPES[0]);
-    const [saving, setSaving] = useState(false);
-    const [err, setErr] = useState<string | null>(null);
-
-    async function submit(e: React.FormEvent) {
-        e.preventDefault();
-        setSaving(true);
-        setErr(null);
-        try {
-            await onCreate({ name, type });
-            setOpen(false);
-            setName('');
-            setType(SIZE_TYPES[0]);
-        } catch (e) {
-            setErr(e instanceof Error ? e.message : 'Create failed');
-        } finally {
-            setSaving(false);
-        }
-    }
-
-    return (
-        <CrudDialog
-            open={open}
-            onOpenChange={setOpen}
-            title="Create Size"
-            trigger={<Button className="cursor-pointer">Create</Button>}
-        >
-            <form className="space-y-4" onSubmit={submit}>
-                <div className="space-y-2">
-                    <Label htmlFor="size-type">Category / Type</Label>
-                    <select
-                        id="size-type"
-                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm capitalize"
-                        value={type}
-                        onChange={(e) => setType(e.target.value)}
-                    >
-                        {SIZE_TYPES.map((t) => (
-                            <option key={t} value={t}>
-                                {t}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="size-name">
-                        Size Name (e.g. 2.4, Size 14)
-                    </Label>
-                    <Input
-                        id="size-name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        required
-                    />
-                </div>
-                {err && (
-                    <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                        {err}
-                    </div>
-                )}
-                <DialogFooter
-                    onCancel={() => setOpen(false)}
-                    isSaving={saving}
-                />
-            </form>
-        </CrudDialog>
-    );
-}
-
-function ViewSizeDialog({
-    size,
-    open,
-    onOpenChange,
-}: {
-    size: Size;
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-}) {
-    return (
-        <CrudDialog open={open} onOpenChange={onOpenChange} title="View Size">
-            <div className="space-y-4">
-                <div>
-                    <strong>Type:</strong>{' '}
-                    <span className="capitalize">{size.type}</span>
-                </div>
-                <div>
-                    <strong>Name:</strong> {size.name}
-                </div>
-            </div>
-            <DialogFooter
-                onCancel={() => onOpenChange(false)}
-                showSave={false}
-                cancelText="Close"
-            />
-        </CrudDialog>
-    );
-}
-
-function EditSizeDialog({
-    size,
-    open,
-    onOpenChange,
-    onUpdate,
-}: {
-    size: Size;
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-    onUpdate: (id: number, data: SizePayload) => Promise<void>;
-}) {
-    const [name, setName] = useState(size.name);
-    const [type, setType] = useState(size.type);
-    const [saving, setSaving] = useState(false);
-    const [err, setErr] = useState<string | null>(null);
-
-    useEffect(() => {
-        setName(size.name);
-        setType(size.type);
-        setErr(null);
-    }, [size]);
-
-    async function submit(e: React.FormEvent) {
-        e.preventDefault();
-        setSaving(true);
-        setErr(null);
-        try {
-            await onUpdate(size.id, { name, type });
-            onOpenChange(false);
-        } catch (e) {
-            setErr(e instanceof Error ? e.message : 'Update failed');
-        } finally {
-            setSaving(false);
-        }
-    }
-
-    return (
-        <CrudDialog open={open} onOpenChange={onOpenChange} title="Edit Size">
-            <form className="space-y-4" onSubmit={submit}>
-                <div className="space-y-2">
-                    <Label htmlFor="edit-type">Category / Type</Label>
-                    <select
-                        id="edit-type"
-                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm capitalize"
-                        value={type}
-                        onChange={(e) => setType(e.target.value)}
-                    >
-                        {SIZE_TYPES.map((t) => (
-                            <option key={t} value={t}>
-                                {t}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="edit-name">Size Name</Label>
-                    <Input
-                        id="edit-name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        required
-                    />
-                </div>
-                {err && (
-                    <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                        {err}
-                    </div>
-                )}
-                <DialogFooter
-                    onCancel={() => onOpenChange(false)}
-                    isSaving={saving}
-                />
-            </form>
-        </CrudDialog>
     );
 }

@@ -3,18 +3,18 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { AdminLayout } from './layout/AdminLayout'
-import { AdminUsersPage } from './pages/AdminUsers'
-import { BrandsPage } from './pages/Brands'
-import { CategoriesPage } from './pages/Categories'
-import { CustomersPage } from './pages/Customers'
-import { DashboardPage } from './pages/Dashboard'
-import { LoginPage } from './pages/Login'
-import { MediaPage } from './pages/Media'
-import { MenuPage } from './pages/Menus'
-import { OrdersPage } from './pages/Orders'
+import { AdminUsersPage } from './pages/AdminUsers/AdminUsersPage'
+import { BrandsPage } from './pages/Brands/BrandsPage'
+import { CategoriesPage } from './pages/Categories/CategoriesPage'
+import { CustomersPage } from './pages/Customers/CustomersPage'
+import { DashboardPage } from './pages/Dashboard/DashboardPage'
+import { LoginPage } from './pages/Login/LoginPage'
+import { MediaPage } from './pages/Media/MediaPage'
+import { MenusPage } from './pages/Menus/MenusPage'
+import { OrdersPage } from './pages/Orders/OrdersPage'
 import { ProductsPage } from './pages/Products/ProductsPage'
-import { SettingsPage } from './pages/Settings'
-import { SizesPage } from './pages/Sizes'
+import { SettingsPage } from './pages/Settings/SettingsPage'
+import { SizesPage } from './pages/Sizes/SizesPage'
 
 export function AdminApp() {
   return (
@@ -25,7 +25,7 @@ export function AdminApp() {
         <Route element={<ProtectedRoute />}>
           <Route element={<AdminLayout />}>
             <Route path="/" element={<DashboardPage />} />
-            <Route path='/menus' element={<MenuPage />} />
+            <Route path='/menus' element={<MenusPage />} />
             <Route path="/categories" element={<CategoriesPage />} />
             <Route path="/brands" element={<BrandsPage />} />
             <Route path="/sizes" element={<SizesPage />} />

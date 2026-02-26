@@ -1,25 +1,11 @@
 import { FileIcon, Trash2, Upload } from 'lucide-react';
 import React, { useCallback, useEffect, useState } from 'react';
 
-import { Button } from '../../../components/ui/button';
-import { Card, CardContent } from '../../../components/ui/card';
-import { Label } from '../../../components/ui/label';
-import { apiFetch } from '../lib/api';
-
-type MediaItem = {
-    id: number;
-    file_name: string;
-    path: string;
-    mime_type: string;
-    size: number;
-};
-
-type Paginated<T> = {
-    data: T[];
-    current_page: number;
-    last_page: number;
-    total: number;
-};
+import { Button } from '../../../../components/ui/button';
+import { Card, CardContent } from '../../../../components/ui/card';
+import { Label } from '../../../../components/ui/label';
+import { apiFetch } from '../../lib/api';
+import type { MediaItem, PaginatedResponse } from '../../types/media';
 
 export function MediaPage() {
     const [media, setMedia] = useState<MediaItem[]>([]);
@@ -30,12 +16,11 @@ export function MediaPage() {
     const loadMedia = useCallback(async (targetPage = 1) => {
         setLoading(true);
         try {
-            // Fetch with page parameter
-            const res = await apiFetch<Paginated<MediaItem>>(
+            const res = await apiFetch<PaginatedResponse<MediaItem>>(
                 `/api/v1/admin/media?page=${targetPage}`,
             );
             if (res.success) {
-                setMedia(res.data.data); // Notice the double .data
+                setMedia(res.data.data);
                 setPage(res.data.current_page);
                 setLastPage(res.data.last_page);
             }
@@ -52,21 +37,15 @@ export function MediaPage() {
 
     async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
         if (!e.target.files?.[0]) return;
-
         const formData = new FormData();
         formData.append('file', e.target.files[0]);
 
         try {
-            // Note: If your custom apiFetch automatically stringifies JSON,
-            // you may need to ensure it skips that step when the body is FormData.
             const res = await apiFetch<MediaItem>('/api/v1/admin/media', {
                 method: 'POST',
                 body: formData,
             });
-
-            if (res.success) {
-                void loadMedia(); // Refresh the grid after upload
-            }
+            if (res.success) void loadMedia();
         } catch (error) {
             console.error('Upload failed:', error);
         }
@@ -74,15 +53,11 @@ export function MediaPage() {
 
     async function handleDelete(id: number) {
         if (!confirm('Are you sure you want to delete this file?')) return;
-
         try {
             const res = await apiFetch<unknown>(`/api/v1/admin/media/${id}`, {
                 method: 'DELETE',
             });
-
-            if (res.success) {
-                void loadMedia();
-            }
+            if (res.success) void loadMedia();
         } catch (error) {
             console.error('Delete failed:', error);
         }
@@ -99,7 +74,6 @@ export function MediaPage() {
                 </div>
 
                 <div className="flex gap-2">
-                    {/* Label acts as the trigger for the hidden file input */}
                     <Label htmlFor="upload" className="cursor-pointer">
                         <div className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
                             <Upload className="h-4 w-4" />
@@ -141,8 +115,6 @@ export function MediaPage() {
                                 ) : (
                                     <FileIcon className="h-10 w-10 text-muted-foreground" />
                                 )}
-
-                                {/* Hover overlay with delete button */}
                                 <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100">
                                     <Button
                                         variant="destructive"
