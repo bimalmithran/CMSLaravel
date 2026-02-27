@@ -1,9 +1,13 @@
 export type MediaItem = {
     id: number;
+    disk: string;
     file_name: string;
     path: string;
     mime_type: string;
     size: number;
+    alt_text: string | null;
+    created_at: string;
+    updated_at: string;
 };
 
 export type PaginatedResponse<T> = {

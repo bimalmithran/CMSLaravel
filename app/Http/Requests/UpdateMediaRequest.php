@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreMediaRequest extends FormRequest
+class UpdateMediaRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -14,8 +14,8 @@ class StoreMediaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // 20480 KB = 20MB limit
-            'file' => ['required', 'file', 'max:20480'],
+            'file_name' => ['nullable', 'string', 'max:255'],
+            'alt_text'  => ['nullable', 'string', 'max:255'],
         ];
     }
 }

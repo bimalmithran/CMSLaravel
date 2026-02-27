@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreMediaRequest extends FormRequest
+class BulkDeleteMediaRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -14,8 +14,8 @@ class StoreMediaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // 20480 KB = 20MB limit
-            'file' => ['required', 'file', 'max:20480'],
+            'ids'   => ['required', 'array', 'min:1'],
+            'ids.*' => ['required', 'integer', 'exists:media,id'],
         ];
     }
 }

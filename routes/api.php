@@ -99,7 +99,8 @@ Route::prefix('v1')->group(function () {
             Route::put('/orders/{id}/payment-status', [AdminOrderController::class, 'updatePaymentStatus']);
 
             // Admin media upload
-            Route::apiResource('media', AdminMediaController::class)->only(['index', 'store', 'destroy']);
+            Route::apiResource('media', AdminMediaController::class)->only(['index', 'store', 'update', 'destroy']);
+            Route::post('media/bulk-delete', [AdminMediaController::class, 'bulkDestroy']);
 
             // Admin settings
             Route::get('/settings', [AdminSettingController::class, 'index']);
