@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\Admin\AdminUserController;
 use App\Http\Controllers\Api\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Api\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Api\Admin\CustomerController as AdminCustomerController;
+use App\Http\Controllers\Api\Admin\ContentBlockController as AdminContentBlockController;
 use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Api\Admin\PageController as AdminPageController;
 use App\Http\Controllers\Api\Admin\BrandController as AdminBrandController;
@@ -18,6 +19,7 @@ use App\Http\Controllers\Api\Admin\SettingController as AdminSettingController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\BannerController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\ContentBlockController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\PageController;
@@ -38,6 +40,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/products/{id}', [ProductController::class, 'show']);
     Route::get('/products/{id}/related', [ProductController::class, 'related']);
     Route::get('/pages/{slug}', [PageController::class, 'showBySlug']);
+    Route::get('/content-blocks/{identifier}', [ContentBlockController::class, 'showByIdentifier']);
     Route::get('/banners', [BannerController::class, 'byPlacement']);
     Route::get('/settings/global', [SettingController::class, 'global']);
 
@@ -95,6 +98,7 @@ Route::prefix('v1')->group(function () {
             Route::apiResource('categories', AdminCategoryController::class);
             Route::apiResource('products', AdminProductController::class);
             Route::apiResource('pages', AdminPageController::class);
+            Route::apiResource('content-blocks', AdminContentBlockController::class);
             Route::get('/menus/list', [AdminMenuController::class, 'list']);
             Route::apiResource('menus', AdminMenuController::class);
 

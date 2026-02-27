@@ -7,6 +7,7 @@ import { AdminUsersPage } from './pages/AdminUsers/AdminUsersPage'
 import { BannersPage } from './pages/Banners/BannersPage'
 import { BrandsPage } from './pages/Brands/BrandsPage'
 import { CategoriesPage } from './pages/Categories/CategoriesPage'
+import { ContentBlocksPage } from './pages/ContentBlocks/ContentBlocksPage'
 import { CustomersPage } from './pages/Customers/CustomersPage'
 import { DashboardPage } from './pages/Dashboard/DashboardPage'
 import { LoginPage } from './pages/Login/LoginPage'
@@ -34,6 +35,7 @@ export function AdminApp() {
             <Route path="/sizes" element={<SizesPage />} />
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/pages" element={<PagesPage />} />
+            <Route path="/content-blocks" element={<ContentBlocksPage />} />
             <Route path="/orders" element={<OrdersPage />} />
             <Route path="/admin-users" element={<AdminUsersPage />} />
             <Route path="/customers" element={<CustomersPage />} />

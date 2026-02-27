@@ -20,12 +20,12 @@ import {
 } from '../../../../components/ui/dropdown-menu';
 import { Input } from '../../../../components/ui/input';
 import { Label } from '../../../../components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../components/ui/tabs';
 import { Textarea } from '../../../../components/ui/textarea';
 import { CrudDialog, DialogFooter } from '../../components/CrudDialog';
 import { DataTable } from '../../components/DataTable';
+import { HtmlContentPreview } from '../../components/HtmlContentPreview';
 import { FullScreenLoader } from '../../components/ui/FullScreenLoader';
-import { RichTextEditor } from '../../components/ui/RichTextEditor';
+import { WysiwygHtmlEditor } from '../../components/WysiwygHtmlEditor';
 import { apiFetch } from '../../lib/api';
 import type { Page, PagePayload, PaginatedResponse } from '../../types/page';
 
@@ -65,8 +65,6 @@ function PageForm({
     value: PageFormValues;
     onChange: (next: PageFormValues) => void;
 }) {
-    const [editorMode, setEditorMode] = useState<'visual' | 'html'>('visual');
-
     return (
         <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
@@ -102,41 +100,14 @@ function PageForm({
 
             <div className="space-y-2">
                 <Label>Page Content</Label>
-                <Tabs
-                    value={editorMode}
-                    onValueChange={(mode) => setEditorMode(mode as 'visual' | 'html')}
-                    className="w-full"
-                >
-                    <TabsList className="mb-2">
-                        <TabsTrigger value="visual" className="cursor-pointer">
-                            Visual Editor
-                        </TabsTrigger>
-                        <TabsTrigger value="html" className="cursor-pointer">
-                            HTML Source
-                        </TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="visual">
-                        <RichTextEditor
-                            value={value.content}
-                            onChange={(content) => onChange({ ...value, content })}
-                            placeholder="Write your page content here..."
-                        />
-                    </TabsContent>
-
-                    <TabsContent value="html" className="space-y-2">
-                        <Textarea
-                            value={value.content}
-                            onChange={(e) => onChange({ ...value, content: e.target.value })}
-                            rows={16}
-                            className="font-mono text-xs"
-                            placeholder="<section><h1>About Us</h1><p>...</p></section>"
-                        />
-                        <p className="text-xs text-muted-foreground">
-                            Paste full HTML here for complex layouts. This content is stored as-is.
-                        </p>
-                    </TabsContent>
-                </Tabs>
+                <WysiwygHtmlEditor
+                    value={value.content}
+                    onChange={(content) => onChange({ ...value, content })}
+                    visualPlaceholder="Write your page content here..."
+                    sourcePlaceholder="<section><h1>About Us</h1><p>...</p></section>"
+                    sourceRows={16}
+                    sourceHint="Paste full HTML here for complex layouts. This content is stored as-is."
+                />
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -335,10 +306,7 @@ function ViewPageDialog({
                 </div>
                 <div>
                     <div className="text-xs text-muted-foreground">Content Preview</div>
-                    <div
-                        className="max-h-60 overflow-y-auto rounded-md border p-3"
-                        dangerouslySetInnerHTML={{ __html: page.content }}
-                    />
+                    <HtmlContentPreview html={page.content} />
                 </div>
             </div>
             <DialogFooter onCancel={() => onOpenChange(false)} showSave={false} cancelText="Close" />

@@ -163,6 +163,7 @@ export function AdminLayout() {
         { to: '/sizes', label: 'Sizes', icon: Ruler },
         { to: '/products', label: 'Products', icon: Package },
         { to: '/pages', label: 'Pages', icon: ScrollText },
+        { to: '/content-blocks', label: 'Content Blocks', icon: List },
         { to: '/orders', label: 'Orders', icon: ShoppingCart },
         { to: '/admin-users', label: 'Admin Users', icon: UserCog },
         { to: '/customers', label: 'Customers', icon: Users },
