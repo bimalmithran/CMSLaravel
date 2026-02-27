@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { AdminLayout } from './layout/AdminLayout'
 import { AdminUsersPage } from './pages/AdminUsers/AdminUsersPage'
+import { BannersPage } from './pages/Banners/BannersPage'
 import { BrandsPage } from './pages/Brands/BrandsPage'
 import { CategoriesPage } from './pages/Categories/CategoriesPage'
 import { CustomersPage } from './pages/Customers/CustomersPage'
@@ -28,6 +29,7 @@ export function AdminApp() {
             <Route path='/menus' element={<MenusPage />} />
             <Route path="/categories" element={<CategoriesPage />} />
             <Route path="/brands" element={<BrandsPage />} />
+            <Route path="/banners" element={<BannersPage />} />
             <Route path="/sizes" element={<SizesPage />} />
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/orders" element={<OrdersPage />} />
@@ -43,4 +45,3 @@ export function AdminApp() {
     </BrowserRouter>
   )
 }
-

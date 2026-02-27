@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Admin\CategoryController as AdminCategoryController
 use App\Http\Controllers\Api\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Api\Admin\BrandController as AdminBrandController;
+use App\Http\Controllers\Api\Admin\BannerController as AdminBannerController;
 use App\Http\Controllers\Api\Admin\SizeController as AdminSizeController;
 use App\Http\Controllers\Api\Admin\ProductTypeController as AdminProductTypeController;
 use App\Http\Controllers\Api\Admin\ProductController as AdminProductController;
@@ -14,9 +15,11 @@ use App\Http\Controllers\Api\AuthController as CustomerAuthController;
 use App\Http\Controllers\Api\Admin\MediaController as AdminMediaController;
 use App\Http\Controllers\Api\Admin\SettingController as AdminSettingController;
 use App\Http\Controllers\Api\CartController;
+use App\Http\Controllers\Api\BannerController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\WishlistController;
 use Illuminate\Support\Facades\Route;
 
@@ -32,6 +35,8 @@ Route::prefix('v1')->group(function () {
     Route::get('/products/search', [ProductController::class, 'search']);
     Route::get('/products/{id}', [ProductController::class, 'show']);
     Route::get('/products/{id}/related', [ProductController::class, 'related']);
+    Route::get('/banners', [BannerController::class, 'byPlacement']);
+    Route::get('/settings/global', [SettingController::class, 'global']);
 
     // Customer auth (token-based)
     Route::post('/auth/register', [CustomerAuthController::class, 'register']);
@@ -74,6 +79,7 @@ Route::prefix('v1')->group(function () {
 
             // Brands
             Route::apiResource('brands', AdminBrandController::class);
+            Route::apiResource('banners', AdminBannerController::class);
 
             // Sizes
             Route::apiResource('sizes', AdminSizeController::class);

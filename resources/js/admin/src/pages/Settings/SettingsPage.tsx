@@ -8,6 +8,7 @@ import { Label } from '../../../../components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../components/ui/tabs';
 import { Textarea } from '../../../../components/ui/textarea';
 import { MediaPicker } from '../../components/MediaPicker';
+import { FullScreenLoader } from '../../components/ui/FullScreenLoader';
 import { apiFetch } from '../../lib/api';
 import type { Setting } from '../../types/setting';
 
@@ -45,7 +46,18 @@ export function SettingsPage() {
     }, [settings]);
 
     function handleValueChange(id: number, newValue: string) {
-        setSettings((prev) => prev.map((s) => (s.id === id ? { ...s, value: newValue } : s)));
+        setSettings((prev) => prev.map((s) => (s.id === id ? { ...s, value: newValue, media_id: s.type === 'image' ? s.media_id : null } : s)));
+        setSuccessMsg(null);
+    }
+
+    function handleImageChange(id: number, media: { id: number; path: string } | null) {
+        setSettings((prev) =>
+            prev.map((s) =>
+                s.id === id
+                    ? { ...s, value: media?.path ?? null, media_id: media?.id ?? null }
+                    : s,
+            ),
+        );
         setSuccessMsg(null);
     }
 
@@ -56,7 +68,13 @@ export function SettingsPage() {
         try {
             const res = await apiFetch<unknown>('/api/v1/admin/settings/bulk', {
                 method: 'PUT',
-                json: { settings },
+                json: {
+                    settings: settings.map((setting) => ({
+                        id: setting.id,
+                        value: setting.value,
+                        media_id: setting.type === 'image' ? setting.media_id : null,
+                    })),
+                },
             });
             if (!res.success) throw new Error(res.message || 'Failed to save');
             setSuccessMsg('Settings updated successfully.');
@@ -115,7 +133,11 @@ export function SettingsPage() {
                                             {setting.type === 'textarea' ? (
                                                 <Textarea id={`setting-${setting.id}`} value={setting.value || ''} onChange={(e) => handleValueChange(setting.id, e.target.value)} rows={4} />
                                             ) : setting.type === 'image' ? (
-                                                <MediaPicker value={setting.value || ''} onSelect={(url) => handleValueChange(setting.id, url)} />
+                                                <MediaPicker
+                                                    value={setting.value || ''}
+                                                    onSelect={(url) => handleValueChange(setting.id, url)}
+                                                    onSelectMedia={(media) => handleImageChange(setting.id, media)}
+                                                />
                                             ) : (
                                                 <Input id={`setting-${setting.id}`} value={setting.value || ''} onChange={(e) => handleValueChange(setting.id, e.target.value)} />
                                             )}
@@ -130,6 +152,8 @@ export function SettingsPage() {
             ) : (
                 <div className="text-sm text-muted-foreground">No settings found in the database.</div>
             )}
+
+            <FullScreenLoader open={saving} text="Saving configuration..." />
         </div>
     );
 }

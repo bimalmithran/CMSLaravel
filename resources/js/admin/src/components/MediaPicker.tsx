@@ -30,9 +30,10 @@ type Paginated<T> = {
 interface MediaPickerProps {
     value?: string | null;
     onSelect: (url: string) => void;
+    onSelectMedia?: (media: { id: number; path: string } | null) => void;
 }
 
-export function MediaPicker({ value, onSelect }: MediaPickerProps) {
+export function MediaPicker({ value, onSelect, onSelectMedia }: MediaPickerProps) {
     const [open, setOpen] = useState(false);
     const [media, setMedia] = useState<MediaItem[]>([]);
     const [loading, setLoading] = useState(false);
@@ -77,7 +78,7 @@ export function MediaPicker({ value, onSelect }: MediaPickerProps) {
 
             if (res.success) {
                 // Instantly select the newly uploaded image!
-                handleSelect(res.data.path);
+                handleSelect({ id: res.data.id, path: res.data.path });
             }
         } catch (error) {
             console.error('Upload failed:', error);
@@ -86,8 +87,9 @@ export function MediaPicker({ value, onSelect }: MediaPickerProps) {
         }
     }
 
-    function handleSelect(path: string) {
-        onSelect(path);
+    function handleSelect(item: { id: number; path: string }) {
+        onSelect(item.path);
+        onSelectMedia?.(item);
         setOpen(false);
     }
 
@@ -143,7 +145,7 @@ export function MediaPicker({ value, onSelect }: MediaPickerProps) {
                                     {media.map((item) => (
                                         <div
                                             key={item.id}
-                                            onClick={() => handleSelect(item.path)}
+                                            onClick={() => handleSelect({ id: item.id, path: item.path })}
                                             className="group relative aspect-square rounded-md border cursor-pointer overflow-hidden hover:ring-2 hover:ring-primary transition-all bg-muted/50"
                                         >
                                             {item.mime_type.startsWith('image/') ? (
@@ -195,7 +197,10 @@ export function MediaPicker({ value, onSelect }: MediaPickerProps) {
                         variant="ghost" 
                         size="sm" 
                         type="button" 
-                        onClick={() => onSelect('')}
+                        onClick={() => {
+                            onSelect('');
+                            onSelectMedia?.(null);
+                        }}
                         className="text-destructive hover:text-destructive/90 hover:bg-destructive/10 cursor-pointer h-7 px-2 justify-start w-max"
                     >
                         <X className="h-3 w-3 mr-1" /> Remove

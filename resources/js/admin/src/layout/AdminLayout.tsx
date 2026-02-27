@@ -158,6 +158,7 @@ export function AdminLayout() {
         { to: '/menus', label: 'Menus', icon: List },
         { to: '/categories', label: 'Categories', icon: FolderTree },
         { to: '/brands', label: 'Brands', icon: Square },
+        { to: '/banners', label: 'Banners', icon: Images },
         { to: '/sizes', label: 'Sizes', icon: Ruler },
         { to: '/products', label: 'Products', icon: Package },
         { to: '/orders', label: 'Orders', icon: ShoppingCart },

@@ -27,6 +27,17 @@ class SettingSeeder extends Seeder
             // Social Group
             ['key' => 'social_facebook', 'value' => 'https://facebook.com', 'type' => 'text', 'group' => 'social'],
             ['key' => 'social_instagram', 'value' => 'https://instagram.com', 'type' => 'text', 'group' => 'social'],
+
+            // Store Group
+            ['key' => 'store_tax_id', 'value' => null, 'type' => 'text', 'group' => 'store'],
+            ['key' => 'support_whatsapp', 'value' => null, 'type' => 'text', 'group' => 'store'],
+            ['key' => 'currency_symbol', 'value' => '$', 'type' => 'text', 'group' => 'store'],
+            ['key' => 'store_timezone', 'value' => 'UTC', 'type' => 'text', 'group' => 'store'],
+
+            // SEO Group
+            ['key' => 'default_meta_title', 'value' => 'Premium Jewelry & Diamonds', 'type' => 'text', 'group' => 'seo'],
+            ['key' => 'default_meta_description', 'value' => 'Discover premium jewelry, diamonds, and timepieces crafted for timeless elegance.', 'type' => 'textarea', 'group' => 'seo'],
+            ['key' => 'default_og_image', 'value' => null, 'type' => 'image', 'group' => 'seo'],
         ];
 
         foreach ($settings as $setting) {
