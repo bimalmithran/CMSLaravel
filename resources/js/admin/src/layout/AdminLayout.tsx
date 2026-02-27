@@ -156,24 +156,56 @@ export function AdminLayout() {
         navigate('/login', { replace: true });
     }
 
-    const navItems = [
+    const primaryNavItems = [
         { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
+    ];
+
+    const cmsNavItems = [
         { to: '/menus', label: 'Menus', icon: List },
+        { to: '/pages', label: 'Pages', icon: ScrollText },
+        { to: '/content-blocks', label: 'Content Blocks', icon: List },
+        { to: '/testimonials', label: 'Testimonials', icon: MessageSquare },
+        { to: '/faqs', label: 'FAQs', icon: CircleHelp },
+        { to: '/media', label: 'Media', icon: Images },
+    ];
+
+    const shoppingCartNavItems = [
         { to: '/categories', label: 'Categories', icon: FolderTree },
         { to: '/brands', label: 'Brands', icon: Square },
         { to: '/banners', label: 'Banners', icon: Images },
         { to: '/sizes', label: 'Sizes', icon: Ruler },
         { to: '/products', label: 'Products', icon: Package },
-        { to: '/pages', label: 'Pages', icon: ScrollText },
-        { to: '/content-blocks', label: 'Content Blocks', icon: List },
-        { to: '/testimonials', label: 'Testimonials', icon: MessageSquare },
-        { to: '/faqs', label: 'FAQs', icon: CircleHelp },
         { to: '/orders', label: 'Orders', icon: ShoppingCart },
-        { to: '/admin-users', label: 'Admin Users', icon: UserCog },
         { to: '/customers', label: 'Customers', icon: Users },
-        { to: '/media', label: 'Media', icon: Images },
+    ];
+
+    const systemNavItems = [
+        { to: '/admin-users', label: 'Admin Users', icon: UserCog },
         { to: '/settings', label: 'Settings', icon: Settings },
     ];
+
+    function renderNavItems(items: Array<{ to: string; label: string; icon: React.ElementType; end?: boolean }>) {
+        return items.map((item) => {
+            const isActive = item.end
+                ? location.pathname === item.to
+                : location.pathname.startsWith(item.to);
+
+            return (
+                <SidebarMenuItem key={item.to}>
+                    <SidebarMenuButton
+                        asChild
+                        isActive={isActive}
+                        tooltip={item.label}
+                    >
+                        <NavLink to={item.to} end={item.end}>
+                            <item.icon />
+                            <span>{item.label}</span>
+                        </NavLink>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+            );
+        });
+    }
 
     return (
         <ThemeProvider defaultTheme="system" storageKey="tt-admin-theme">
@@ -193,30 +225,44 @@ export function AdminLayout() {
                     <SidebarContent>
                         <SidebarGroup>
                             <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden">
-                                Application
+                                Overview
                             </SidebarGroupLabel>
                             <SidebarGroupContent>
                                 <SidebarMenu>
-                                    {navItems.map((item) => {
-                                        const isActive = item.end
-                                            ? location.pathname === item.to
-                                            : location.pathname.startsWith(item.to);
+                                    {renderNavItems(primaryNavItems)}
+                                </SidebarMenu>
+                            </SidebarGroupContent>
+                        </SidebarGroup>
 
-                                        return (
-                                            <SidebarMenuItem key={item.to}>
-                                                <SidebarMenuButton
-                                                    asChild
-                                                    isActive={isActive}
-                                                    tooltip={item.label}
-                                                >
-                                                    <NavLink to={item.to} end={item.end}>
-                                                        <item.icon />
-                                                        <span>{item.label}</span>
-                                                    </NavLink>
-                                                </SidebarMenuButton>
-                                            </SidebarMenuItem>
-                                        );
-                                    })}
+                        <SidebarGroup>
+                            <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden">
+                                CMS
+                            </SidebarGroupLabel>
+                            <SidebarGroupContent>
+                                <SidebarMenu>
+                                    {renderNavItems(cmsNavItems)}
+                                </SidebarMenu>
+                            </SidebarGroupContent>
+                        </SidebarGroup>
+
+                        <SidebarGroup>
+                            <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden">
+                                Shopping Cart
+                            </SidebarGroupLabel>
+                            <SidebarGroupContent>
+                                <SidebarMenu>
+                                    {renderNavItems(shoppingCartNavItems)}
+                                </SidebarMenu>
+                            </SidebarGroupContent>
+                        </SidebarGroup>
+
+                        <SidebarGroup>
+                            <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden">
+                                System
+                            </SidebarGroupLabel>
+                            <SidebarGroupContent>
+                                <SidebarMenu>
+                                    {renderNavItems(systemNavItems)}
                                 </SidebarMenu>
                             </SidebarGroupContent>
                         </SidebarGroup>
