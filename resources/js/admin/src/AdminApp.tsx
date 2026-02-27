@@ -13,6 +13,7 @@ import { LoginPage } from './pages/Login/LoginPage'
 import { MediaPage } from './pages/Media/MediaPage'
 import { MenusPage } from './pages/Menus/MenusPage'
 import { OrdersPage } from './pages/Orders/OrdersPage'
+import { PagesPage } from './pages/Pages/PagesPage'
 import { ProductsPage } from './pages/Products/ProductsPage'
 import { SettingsPage } from './pages/Settings/SettingsPage'
 import { SizesPage } from './pages/Sizes/SizesPage'
@@ -32,6 +33,7 @@ export function AdminApp() {
             <Route path="/banners" element={<BannersPage />} />
             <Route path="/sizes" element={<SizesPage />} />
             <Route path="/products" element={<ProductsPage />} />
+            <Route path="/pages" element={<PagesPage />} />
             <Route path="/orders" element={<OrdersPage />} />
             <Route path="/admin-users" element={<AdminUsersPage />} />
             <Route path="/customers" element={<CustomersPage />} />

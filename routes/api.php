@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Api\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Api\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
+use App\Http\Controllers\Api\Admin\PageController as AdminPageController;
 use App\Http\Controllers\Api\Admin\BrandController as AdminBrandController;
 use App\Http\Controllers\Api\Admin\BannerController as AdminBannerController;
 use App\Http\Controllers\Api\Admin\SizeController as AdminSizeController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\Api\BannerController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\PageController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\WishlistController;
 use Illuminate\Support\Facades\Route;
@@ -35,6 +37,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/products/search', [ProductController::class, 'search']);
     Route::get('/products/{id}', [ProductController::class, 'show']);
     Route::get('/products/{id}/related', [ProductController::class, 'related']);
+    Route::get('/pages/{slug}', [PageController::class, 'showBySlug']);
     Route::get('/banners', [BannerController::class, 'byPlacement']);
     Route::get('/settings/global', [SettingController::class, 'global']);
 
@@ -91,6 +94,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/categories/list', [AdminCategoryController::class, 'list']);
             Route::apiResource('categories', AdminCategoryController::class);
             Route::apiResource('products', AdminProductController::class);
+            Route::apiResource('pages', AdminPageController::class);
             Route::get('/menus/list', [AdminMenuController::class, 'list']);
             Route::apiResource('menus', AdminMenuController::class);
 
