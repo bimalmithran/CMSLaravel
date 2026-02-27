@@ -1,6 +1,6 @@
 import type React from 'react';
 import type { SpecFormProps } from '../../../../types/product';
-import { DiamondSpecs } from './DiamondSpecs';
+import { DiamondSpec } from './DiamondSpec';
 import { JewelrySpecs } from './JewelrySpecs';
 import { WatchSpecs } from './WatchSpecs';
 
@@ -8,5 +8,5 @@ import { WatchSpecs } from './WatchSpecs';
 export const SpecFormRegistry: Record<string, React.FC<SpecFormProps>> = {
     jewelry: JewelrySpecs,
     watch: WatchSpecs,
-    diamond: DiamondSpecs,
+    diamond: DiamondSpec,
 };

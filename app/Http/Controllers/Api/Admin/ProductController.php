@@ -36,51 +36,36 @@ class ProductController extends Controller
 
     public function show($id)
     {
-        $product = Product::with([
-            'category',
-            'brand',
-            'productType',
-            'jewelrySpec',
-            'watchSpec',
-            'diamondSpec',
-            'sizes'
-        ])->findOrFail($id);
+        $product = Product::with(['category', 'brand', 'productType', 'sizes'])->findOrFail($id);
 
-        return response()->json(['success' => true, 'data' => $product]);
+        return response()->json(['success' => true, 'data' => $this->formatProductWithSpecs($product)]);
     }
 
     public function store(Request $request)
     {
-        // 1. Validate Base Fields
         $baseData = $this->validateBaseProduct($request);
         $baseData['slug'] = Str::slug($baseData['name']);
 
-        // 2. Resolve the Strategy based on Product Type
         $productType = ProductType::findOrFail($request->product_type_id);
         $strategy = SpecFactory::make($productType->slug);
 
-        // 3. Validate Specs BEFORE starting the transaction
-        // (If validation fails, Laravel automatically returns a 422 JSON response)
         $rawSpecs = $request->input('specs', []);
         $validatedSpecs = $strategy->validate($rawSpecs);
 
         DB::beginTransaction();
 
         try {
-            // Save Base
             $product = Product::create($baseData);
-
-            // Save Specs via Strategy
             $strategy->store($product, $validatedSpecs);
-
-            // Sync Sizes
             $this->syncSizes($product, $request->input('sizes', []));
 
             DB::commit();
 
+            // Reload base relations and format dynamically
+            $product->load(['category', 'brand', 'productType', 'sizes']);
             return response()->json([
                 'success' => true,
-                'data' => $product->load(['jewelrySpec', 'watchSpec', 'diamondSpec', 'sizes'])
+                'data' => $this->formatProductWithSpecs($product)
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -92,15 +77,12 @@ class ProductController extends Controller
     {
         $product = Product::findOrFail($id);
 
-        // 1. Validate Base Fields
         $baseData = $this->validateBaseProduct($request, $product->id);
         $baseData['slug'] = Str::slug($baseData['name']);
 
-        // 2. Resolve Strategy (Product Type cannot be changed safely, we rely on the existing one)
         $productType = ProductType::findOrFail($product->product_type_id);
         $strategy = SpecFactory::make($productType->slug);
 
-        // 3. Validate Specs
         $rawSpecs = $request->input('specs', []);
         $validatedSpecs = $strategy->validate($rawSpecs, $product);
 
@@ -108,18 +90,16 @@ class ProductController extends Controller
 
         try {
             $product->update($baseData);
-
-            // Update Specs via Strategy
             $strategy->update($product, $validatedSpecs);
-
-            // Sync Sizes
             $this->syncSizes($product, $request->input('sizes', []));
 
             DB::commit();
 
+            // Reload base relations and format dynamically
+            $product->load(['category', 'brand', 'productType', 'sizes']);
             return response()->json([
                 'success' => true,
-                'data' => $product->fresh(['jewelrySpec', 'watchSpec', 'diamondSpec', 'sizes'])
+                'data' => $this->formatProductWithSpecs($product)
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -133,9 +113,27 @@ class ProductController extends Controller
         return response()->json(['success' => true, 'message' => 'Product deleted successfully']);
     }
 
+    // --- Private Helpers ---
+
     /**
-     * Extracted to keep the controller clean (SRP)
+     * OCP FIX: Dynamically load the specific spec relation based on type slug,
+     * and map it to a unified 'specs' array for the frontend.
      */
+    private function formatProductWithSpecs(Product $product): array
+    {
+        // Example: 'diamond' -> 'diamondSpec'
+        $specRelation = Str::camel($product->productType->slug . '_spec');
+
+        if (method_exists($product, $specRelation)) {
+            $product->load($specRelation);
+        }
+
+        $productArray = $product->toArray();
+        $productArray['specs'] = $product->$specRelation ?? [];
+
+        return $productArray;
+    }
+
     private function validateBaseProduct(Request $request, ?int $ignoreId = null): array
     {
         $nameRule = 'required|string|max:255|unique:products,name';
@@ -149,7 +147,7 @@ class ProductController extends Controller
         return $request->validate([
             'category_id' => 'required|exists:categories,id',
             'brand_id' => 'nullable|exists:brands,id',
-            'product_type_id' => $ignoreId ? 'prohibited' : 'required|exists:product_types,id', // Cannot update type later
+            'product_type_id' => $ignoreId ? 'prohibited' : 'required|exists:product_types,id',
             'name' => $nameRule,
             'sku' => $skuRule,
             'short_description' => 'nullable|string',
@@ -164,9 +162,6 @@ class ProductController extends Controller
         ]);
     }
 
-    /**
-     * Extracted to keep the controller clean (SRP)
-     */
     private function syncSizes(Product $product, array $sizes): void
     {
         if (empty($sizes)) {

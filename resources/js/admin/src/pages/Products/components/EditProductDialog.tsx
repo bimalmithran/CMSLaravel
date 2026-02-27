@@ -71,7 +71,6 @@ export function EditProductDialog({
             setImage(product.image ?? '');
             setGallery(product.gallery || []);
 
-            // FIX: Explicitly cast the specs to satisfy the strict linter
             setSpecs(
                 (product.specs as Record<string, SpecValue>) ||
                     (product.diamond_spec as Record<string, SpecValue>) ||
@@ -107,11 +106,12 @@ export function EditProductDialog({
                             <div className="space-y-2">
                                 <Label>Product Type *</Label>
                                 <select
-                                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm focus-visible:ring-1 focus-visible:ring-primary"
+                                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm focus-visible:ring-1 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
                                     value={typeId}
                                     onChange={(e) =>
                                         setTypeId(Number(e.target.value))
                                     }
+                                    disabled // <-- Disabled! Type cannot be changed.
                                 >
                                     <option value="" disabled>
                                         Select Type...
@@ -312,7 +312,7 @@ export function EditProductDialog({
         setSaving(true);
         try {
             await onUpdate(product.id, {
-                product_type_id: typeId,
+                // REMOVED: product_type_id: typeId
                 category_id: categoryId,
                 brand_id: brandId === '' ? null : brandId,
                 name,

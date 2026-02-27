@@ -17,6 +17,7 @@ import {
 } from '../../../../components/ui/dropdown-menu';
 
 import { DataTable } from '../../components/DataTable';
+import { FullScreenLoader } from '../../components/ui/FullScreenLoader';
 import { apiFetch } from '../../lib/api';
 import type {
     PaginatedResponse,
@@ -45,6 +46,9 @@ export function ProductsPage() {
     // Added viewProduct state
     const [viewProduct, setViewProduct] = useState<Product | null>(null);
     const [editProduct, setEditProduct] = useState<Product | null>(null);
+
+    const [isFetchingEdit, setIsFetchingEdit] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const load = React.useCallback(
         async (page: number = 1) => {
@@ -132,14 +136,65 @@ export function ProductsPage() {
         await load(currentPage);
     }
 
+    async function handleEditClick(item: Product) {
+        setIsFetchingEdit(true);
+        try {
+            // Passing <Product> here fixes the SetStateAction error
+            const res = await apiFetch<Product>(
+                `/api/v1/admin/products/${item.id}`,
+            );
+            if (res.success && res.data) {
+                setEditProduct(res.data);
+            }
+        } catch (err) {
+            console.error('Failed to fetch product details', err);
+        } finally {
+            setIsFetchingEdit(false);
+        }
+    }
+
+    async function handleViewClick(item: Product) {
+        setIsFetchingEdit(true);
+        try {
+            const res = await apiFetch<Product>(
+                `/api/v1/admin/products/${item.id}`,
+            );
+            if (res.success && res.data) {
+                setViewProduct(res.data);
+            }
+        } catch (err) {
+            console.error('Failed to fetch product details', err);
+        } finally {
+            setIsFetchingEdit(false);
+        }
+    }
+
     async function deleteProduct(item: Product) {
         if (!confirm(`Delete product "${item.name}"?`)) return;
-        const res = await apiFetch<unknown>(
-            `/api/v1/admin/products/${item.id}`,
-            { method: 'DELETE' },
-        );
-        if (!res.success) return alert(res.message || 'Delete failed');
-        await load();
+
+        setIsDeleting(true);
+        try {
+            const res = await apiFetch<{ success: boolean; message?: string }>(
+                `/api/v1/admin/products/${item.id}`,
+                { method: 'DELETE' },
+            );
+
+            if (!res.success) {
+                throw new Error(res.message || 'Delete failed');
+            }
+
+            // Reload the current page of the data grid to reflect the deletion
+            await load(currentPage);
+        } catch (err) {
+            // Standard alert for delete errors (e.g. foreign key constraints)
+            alert(
+                err instanceof Error
+                    ? err.message
+                    : 'An error occurred while deleting.',
+            );
+        } finally {
+            setIsDeleting(false);
+        }
     }
 
     const columns = useMemo<ColumnDef<Product>[]>(
@@ -214,15 +269,17 @@ export function ProductsPage() {
                                 <DropdownMenuContent align="end">
                                     {/* ADDED VIEW MENU ITEM */}
                                     <DropdownMenuItem
-                                        className="cursor-pointer"
-                                        onClick={() => setViewProduct(item)}
+                                        onClick={() =>
+                                            void handleViewClick(item)
+                                        }
                                     >
                                         <ViewIcon className="mr-2 h-4 w-4" />{' '}
                                         View
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
-                                        className="cursor-pointer"
-                                        onClick={() => setEditProduct(item)}
+                                        onClick={() =>
+                                            void handleEditClick(item)
+                                        }
                                     >
                                         <EditIcon className="mr-2 h-4 w-4" />{' '}
                                         Edit
@@ -278,6 +335,14 @@ export function ProductsPage() {
                 error={error}
                 title="Catalog"
             />
+
+            {/* Global fetching overlay */}
+            <FullScreenLoader
+                open={isFetchingEdit}
+                text="Loading product details..."
+            />
+
+            <FullScreenLoader open={isDeleting} text="Deleting product..." />
 
             {/* ADDED VIEW DIALOG */}
             {viewProduct && (
