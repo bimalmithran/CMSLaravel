@@ -2,7 +2,7 @@ import { clearAdminToken, getAdminToken } from './auth';
 
 export type ApiResponse<T> =
     | { success: true; data: T; message?: string }
-    | { success: false; message: string; data?: unknown };
+    | { success: false; message: string; data?: unknown; errors?: string[] };
 
 const API_BASE =
     (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '';

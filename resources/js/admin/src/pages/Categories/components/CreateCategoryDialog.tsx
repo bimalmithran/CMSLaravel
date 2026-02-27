@@ -65,6 +65,7 @@ export function CreateCategoryDialog({
             onOpenChange={setOpen}
             title="Create Category"
             trigger={<Button className="cursor-pointer">Create</Button>}
+            size="lg"
         >
             <form className="space-y-4" onSubmit={submit}>
                 <div className="space-y-2">

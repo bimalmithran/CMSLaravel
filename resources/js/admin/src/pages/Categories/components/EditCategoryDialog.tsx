@@ -76,6 +76,7 @@ export function EditCategoryDialog({
             open={open}
             onOpenChange={onOpenChange}
             title="Edit Category"
+            size='lg'
         >
             <form className="space-y-4" onSubmit={submit}>
                 <div className="space-y-2">

@@ -19,10 +19,10 @@ import {
 import { DataTable } from '../../components/DataTable';
 import { apiFetch } from '../../lib/api';
 import type {
-    Product,
     PaginatedResponse,
     LookupItem,
     ProductTypeItem,
+    Product,
 } from '../../types/product';
 
 import { CreateProductDialog } from './components/CreateProductDialog';
@@ -97,11 +97,22 @@ export function ProductsPage() {
     }, [load, loadDependencies]);
 
     async function createProduct(payload: Record<string, unknown>) {
+        // NOTE: using <any> here just to safely access res.errors
         const res = await apiFetch<Product>('/api/v1/admin/products', {
             method: 'POST',
             json: payload,
         });
-        if (!res.success) throw new Error(res.message || 'Create failed');
+
+        if (!res.success) {
+            // FIX: Check if Laravel sent detailed field errors
+            if (res.errors) {
+                // Flattens { name: ['Taken'], sku: ['Taken'] } into ['Taken', 'Taken']
+                const detailedErrors = Object.values(res.errors).flat();
+                // Throw it as a stringified array so the Stepper can decode and list it!
+                throw new Error(JSON.stringify(detailedErrors));
+            }
+            throw new Error(res.message || 'Create failed');
+        }
         await load();
     }
 
@@ -110,7 +121,14 @@ export function ProductsPage() {
             method: 'PUT',
             json: payload,
         });
-        if (!res.success) throw new Error(res.message || 'Update failed');
+
+        if (!res.success) {
+            if (res.errors) {
+                const detailedErrors = Object.values(res.errors).flat();
+                throw new Error(JSON.stringify(detailedErrors));
+            }
+            throw new Error(res.message || 'Update failed');
+        }
         await load(currentPage);
     }
 

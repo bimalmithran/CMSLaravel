@@ -1,4 +1,4 @@
-export type SpecValue = string | number | boolean | null;
+export type SpecValue = string | number | boolean | string[] | null;
 
 export type ProductTypeItem = { id: number; name: string; slug: string };
 export type LookupItem = { id: number; name: string };
@@ -16,12 +16,17 @@ export type Product = {
     product_type_id: number;
     category_id: number;
     brand_id: number | null;
+
     productType?: ProductTypeItem;
     category?: LookupItem;
     brand?: LookupItem;
-    jewelry_spec?: Record<string, SpecValue>;
-    watch_spec?: Record<string, SpecValue>;
-    diamond_spec?: Record<string, SpecValue>;
+
+    // The unified specs property we use in our Stepper form
+    specs?: Record<string, SpecValue>;
+
+    // OCP FIX: Allow dynamically named spec objects (like jewelry_spec)
+    // without triggering the "Unexpected any" ESLint rule.
+    [key: string]: unknown;
 };
 
 export type PaginatedResponse<T> = {
