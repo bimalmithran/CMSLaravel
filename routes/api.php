@@ -34,21 +34,39 @@ use Illuminate\Support\Facades\Route;
 Route::get('/health', fn() => response()->json(['status' => 'ok']));
 
 Route::prefix('v1')->group(function () {
-    // Catalog (public)
-    Route::get('/categories', [CategoryController::class, 'index']);
-    Route::get('/categories/{id}', [CategoryController::class, 'show']);
 
-    Route::get('/products', [ProductController::class, 'index']);
-    Route::get('/products/featured', [ProductController::class, 'featured']);
-    Route::get('/products/search', [ProductController::class, 'search']);
-    Route::get('/products/{id}', [ProductController::class, 'show']);
-    Route::get('/products/{id}/related', [ProductController::class, 'related']);
-    Route::get('/pages/{slug}', [PageController::class, 'showBySlug']);
-    Route::get('/content-blocks/{identifier}', [ContentBlockController::class, 'showByIdentifier']);
-    Route::get('/testimonials', [TestimonialController::class, 'index']);
-    Route::get('/faqs', [FaqController::class, 'index']);
-    Route::get('/banners', [BannerController::class, 'byPlacement']);
-    Route::get('/settings/global', [SettingController::class, 'global']);
+    /*
+    |--------------------------------------------------------------------------
+    | Public Storefront APIs (Secured by API Key)
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('storefront.api')->group(function () {
+
+        // Test connection route
+        Route::get('/ping', function () {
+            return response()->json([
+                'success' => true,
+                'message' => 'Storefront connected successfully!'
+            ]);
+        });
+
+        // Catalog & CMS 
+        Route::get('/categories', [CategoryController::class, 'index']);
+        Route::get('/categories/{id}', [CategoryController::class, 'show']);
+
+        Route::get('/products', [ProductController::class, 'index']);
+        Route::get('/products/featured', [ProductController::class, 'featured']);
+        Route::get('/products/search', [ProductController::class, 'search']);
+        Route::get('/products/{id}', [ProductController::class, 'show']);
+        Route::get('/products/{id}/related', [ProductController::class, 'related']);
+
+        Route::get('/pages/{slug}', [PageController::class, 'showBySlug']);
+        Route::get('/content-blocks/{identifier}', [ContentBlockController::class, 'showByIdentifier']);
+        Route::get('/testimonials', [TestimonialController::class, 'index']);
+        Route::get('/faqs', [FaqController::class, 'index']);
+        Route::get('/banners', [BannerController::class, 'byPlacement']);
+        Route::get('/settings/global', [SettingController::class, 'global']);
+    });
 
     // Customer auth (token-based)
     Route::post('/auth/register', [CustomerAuthController::class, 'register']);

@@ -16,7 +16,8 @@ services:
       DB_DATABASE: ttshoppingcart
       DB_USERNAME: ttshop_user
       DB_PASSWORD: ttshop_password
-      QUEUE_CONNECTION: database # Ensures jobs go to the DB table
+      QUEUE_CONNECTION: database
+      STOREFRONT_API_KEY: your_storefront_api_key_here
     volumes:
       - ./:/app
     ports:
