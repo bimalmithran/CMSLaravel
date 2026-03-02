@@ -1,4 +1,7 @@
 <IfModule mod_rewrite.c>
+    # ADDED THIS LINE: Allow Apache to follow the storage symlink
+    Options +FollowSymLinks 
+
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
     </IfModule>
