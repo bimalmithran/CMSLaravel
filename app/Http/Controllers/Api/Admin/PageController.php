@@ -24,6 +24,13 @@ class PageController extends Controller
         return response()->json(['success' => true, 'data' => $pages]);
     }
 
+    public function list(): JsonResponse
+    {
+        $pages = $this->pageService->getAllPagesList();
+
+        return response()->json(['success' => true, 'data' => $pages]);
+    }
+
     public function store(StorePageRequest $request): JsonResponse
     {
         $page = $this->pageService->createPage($request->validated());
@@ -52,4 +59,3 @@ class PageController extends Controller
         return response()->json(['success' => true]);
     }
 }
-

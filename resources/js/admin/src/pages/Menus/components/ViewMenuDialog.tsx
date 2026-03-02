@@ -24,6 +24,13 @@ export function ViewMenuDialog({
                     <strong>Description:</strong> {menu.description || '—'}
                 </div>
                 <div>
+                    <strong>Type:</strong> {menu.menu_type}
+                </div>
+                <div>
+                    <strong>Linked Page:</strong>{' '}
+                    {menu.page ? `${menu.page.title} (${menu.page.slug})` : '—'}
+                </div>
+                <div>
                     <strong>Parent:</strong> {menu.parent?.name ?? '(none)'}
                 </div>
                 <div>

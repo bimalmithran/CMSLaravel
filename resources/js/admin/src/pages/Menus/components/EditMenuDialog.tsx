@@ -2,18 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { Checkbox } from '../../../../../components/ui/checkbox';
 import { Input } from '../../../../../components/ui/input';
 import { Label } from '../../../../../components/ui/label';
-import type { MenuItem } from '../../../types/menu';
+import type { MenuItem, PageListItem } from '../../../types/menu';
 import { CrudDialog, DialogFooter } from '../../../components/CrudDialog';
 
 export function EditMenuDialog({
     menu,
     parents,
+    pages,
     open,
     onOpenChange,
     onUpdate,
 }: {
     menu: MenuItem;
     parents: MenuItem[];
+    pages: PageListItem[];
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onUpdate: (
@@ -21,6 +23,8 @@ export function EditMenuDialog({
         data: {
             name: string;
             description?: string;
+            menu_type: 'link' | 'dropdown' | 'product_listing';
+            page_id: number | null;
             parent_id?: number | null;
             position?: number;
             is_active?: boolean;
@@ -28,7 +32,11 @@ export function EditMenuDialog({
     ) => Promise<void>;
 }) {
     const [name, setName] = useState(menu.name);
-    const [description, setDescription] = useState(menu.description);
+    const [description, setDescription] = useState(menu.description ?? '');
+    const [menuType, setMenuType] = useState(menu.menu_type);
+    const [pageId, setPageId] = useState<number | ''>(
+        menu.page_id === null ? '' : menu.page_id,
+    );
     const [parentId, setParentId] = useState<number | ''>(
         menu.parent_id === null ? '' : menu.parent_id,
     );
@@ -39,7 +47,9 @@ export function EditMenuDialog({
 
     useEffect(() => {
         setName(menu.name);
-        setDescription(menu.description);
+        setDescription(menu.description ?? '');
+        setMenuType(menu.menu_type);
+        setPageId(menu.page_id === null ? '' : menu.page_id);
         setParentId(menu.parent_id === null ? '' : menu.parent_id);
         setPosition(menu.position);
         setIsActive(menu.is_active);
@@ -54,6 +64,8 @@ export function EditMenuDialog({
             await onUpdate(menu.id, {
                 name,
                 description: description.trim() ? description : undefined,
+                menu_type: menuType,
+                page_id: menuType === 'link' ? (pageId === '' ? null : pageId) : null,
                 parent_id: parentId === '' ? null : parentId,
                 position,
                 is_active: isActive,
@@ -87,6 +99,51 @@ export function EditMenuDialog({
                     />
                 </div>
                 <div className="space-y-2">
+                    <Label htmlFor="edit-type">Menu Type</Label>
+                    <select
+                        id="edit-type"
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                        value={menuType}
+                        onChange={(e) => {
+                            const next = e.target.value as
+                                | 'link'
+                                | 'dropdown'
+                                | 'product_listing';
+                            setMenuType(next);
+                            if (next !== 'link') setPageId('');
+                        }}
+                    >
+                        <option value="link">Link</option>
+                        <option value="dropdown">Dropdown</option>
+                        <option value="product_listing">Product Listing</option>
+                    </select>
+                </div>
+                {menuType === 'link' && (
+                    <div className="space-y-2">
+                        <Label htmlFor="edit-page">Page</Label>
+                        <select
+                            id="edit-page"
+                            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                            value={pageId}
+                            onChange={(e) =>
+                                setPageId(
+                                    e.target.value === ''
+                                        ? ''
+                                        : Number(e.target.value),
+                                )
+                            }
+                            required
+                        >
+                            <option value="">Select a page</option>
+                            {pages.map((page) => (
+                                <option key={page.id} value={page.id}>
+                                    {page.title} ({page.slug})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                )}
+                <div className="space-y-2">
                     <Label htmlFor="edit-parent">Parent Menu</Label>
                     <select
                         id="edit-parent"
@@ -101,11 +158,13 @@ export function EditMenuDialog({
                         }
                     >
                         <option value="">(none)</option>
-                        {parents.map((p) => (
+                        {parents
+                            .filter((p) => p.id !== menu.id)
+                            .map((p) => (
                             <option key={p.id} value={p.id}>
                                 {p.name}
                             </option>
-                        ))}
+                            ))}
                     </select>
                 </div>
                 <div className="grid grid-cols-2 gap-3">

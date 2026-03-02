@@ -1,0 +1,3 @@
+GET http://localhost:8000/api/v1/banners?placement=homepage_hero
+Accept: application/json
+X-Storefront-Key: your_storefront_api_key_here

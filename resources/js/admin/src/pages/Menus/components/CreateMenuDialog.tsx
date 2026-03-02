@@ -5,24 +5,32 @@ import { Checkbox } from '../../../../../components/ui/checkbox';
 import { Input } from '../../../../../components/ui/input';
 import { Label } from '../../../../../components/ui/label';
 import { CrudDialog, DialogFooter } from '../../../components/CrudDialog';
-import type { MenuItem } from '../../../types/menu';
+import type { MenuItem, PageListItem } from '../../../types/menu';
 
 export function CreateMenuDialog({
     onCreate,
     parents,
+    pages,
 }: {
     onCreate: (data: {
         name: string;
         description?: string;
+        menu_type: 'link' | 'dropdown' | 'product_listing';
+        page_id: number | null;
         is_active: boolean;
         position: number;
         parent_id: number | null;
     }) => Promise<void>;
     parents: MenuItem[];
+    pages: PageListItem[];
 }) {
     const [open, setOpen] = useState(false);
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
+    const [menuType, setMenuType] = useState<
+        'link' | 'dropdown' | 'product_listing'
+    >('link');
+    const [pageId, setPageId] = useState<number | ''>('');
     const [parentId, setParentId] = useState<number | ''>('');
     const [position, setPosition] = useState<number>(0);
     const [isActive, setIsActive] = useState(true);
@@ -37,6 +45,8 @@ export function CreateMenuDialog({
             await onCreate({
                 name,
                 description: description.trim() ? description : undefined,
+                menu_type: menuType,
+                page_id: menuType === 'link' ? (pageId === '' ? null : pageId) : null,
                 parent_id: parentId === '' ? null : parentId,
                 position,
                 is_active: isActive,
@@ -44,6 +54,8 @@ export function CreateMenuDialog({
             setOpen(false);
             setName('');
             setDescription('');
+            setMenuType('link');
+            setPageId('');
             setParentId('');
             setPosition(0);
             setIsActive(true);
@@ -79,6 +91,51 @@ export function CreateMenuDialog({
                         onChange={(e) => setDescription(e.target.value)}
                     />
                 </div>
+                <div className="space-y-2">
+                    <Label htmlFor="menu-type">Menu Type</Label>
+                    <select
+                        id="menu-type"
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                        value={menuType}
+                        onChange={(e) => {
+                            const next = e.target.value as
+                                | 'link'
+                                | 'dropdown'
+                                | 'product_listing';
+                            setMenuType(next);
+                            if (next !== 'link') setPageId('');
+                        }}
+                    >
+                        <option value="link">Link</option>
+                        <option value="dropdown">Dropdown</option>
+                        <option value="product_listing">Product Listing</option>
+                    </select>
+                </div>
+                {menuType === 'link' && (
+                    <div className="space-y-2">
+                        <Label htmlFor="menu-page">Page</Label>
+                        <select
+                            id="menu-page"
+                            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                            value={pageId}
+                            onChange={(e) =>
+                                setPageId(
+                                    e.target.value === ''
+                                        ? ''
+                                        : Number(e.target.value),
+                                )
+                            }
+                            required
+                        >
+                            <option value="">Select a page</option>
+                            {pages.map((page) => (
+                                <option key={page.id} value={page.id}>
+                                    {page.title} ({page.slug})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                )}
                 <div className="space-y-2">
                     <Label htmlFor="menu-parent">Parent Menu</Label>
                     <select

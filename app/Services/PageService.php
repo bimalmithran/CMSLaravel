@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Page;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 
 class PageService
 {
@@ -32,6 +33,13 @@ class PageService
     public function getPageById(int $id): Page
     {
         return Page::findOrFail($id);
+    }
+
+    public function getAllPagesList(): Collection
+    {
+        return Page::query()
+            ->orderBy('title')
+            ->get(['id', 'title', 'slug', 'is_active']);
     }
 
     public function createPage(array $data): Page
@@ -68,4 +76,3 @@ class PageService
             ->firstOrFail();
     }
 }
-

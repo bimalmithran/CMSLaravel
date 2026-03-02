@@ -19,7 +19,7 @@ import {
 
 import { DataTable } from '../../components/DataTable';
 import { apiFetch } from '../../lib/api';
-import type { MenuItem, PaginatedResponse } from '../../types/menu';
+import type { MenuItem, PageListItem, PaginatedResponse } from '../../types/menu';
 
 import { CreateMenuDialog } from './components/CreateMenuDialog';
 import { EditMenuDialog } from './components/EditMenuDialog';
@@ -28,6 +28,7 @@ import { ViewMenuDialog } from './components/ViewMenuDialog';
 export function MenusPage() {
     const [items, setItems] = useState<MenuItem[]>([]);
     const [parents, setParents] = useState<MenuItem[]>([]);
+    const [pages, setPages] = useState<PageListItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [search, setSearch] = useState('');
@@ -84,10 +85,22 @@ export function MenusPage() {
         }
     }, []);
 
+    const loadPages = React.useCallback(async () => {
+        try {
+            const res = await apiFetch<PageListItem[]>('/api/v1/admin/pages/list');
+            if (res.success) {
+                setPages(res.data);
+            }
+        } catch (err) {
+            console.error('Failed to load pages', err);
+        }
+    }, []);
+
     useEffect(() => {
         load().catch(console.error);
         loadParents().catch(console.error);
-    }, [load, loadParents]);
+        loadPages().catch(console.error);
+    }, [load, loadParents, loadPages]);
 
     async function createMenu(payload: Record<string, unknown>) {
         const res = await apiFetch<MenuItem>('/api/v1/admin/menus', {
@@ -146,10 +159,24 @@ export function MenusPage() {
                 ),
             },
             {
+                id: 'menu_type',
+                accessorKey: 'menu_type',
+                header: 'Type',
+            },
+            {
                 id: 'parent',
                 accessorKey: 'parent',
                 header: 'Parent',
                 cell: ({ row }) => row.original.parent?.name ?? '(none)',
+            },
+            {
+                id: 'page',
+                accessorKey: 'page',
+                header: 'Page',
+                cell: ({ row }) =>
+                    row.original.page
+                        ? `${row.original.page.title} (${row.original.page.slug})`
+                        : '(none)',
             },
             {
                 id: 'description',
@@ -240,7 +267,11 @@ export function MenusPage() {
                         Manage product menus.
                     </div>
                 </div>
-                <CreateMenuDialog onCreate={createMenu} parents={parents} />
+                <CreateMenuDialog
+                    onCreate={createMenu}
+                    parents={parents}
+                    pages={pages}
+                />
             </div>
 
             <DataTable<MenuItem, unknown>
@@ -272,6 +303,7 @@ export function MenusPage() {
                 <EditMenuDialog
                     menu={editMenu}
                     parents={parents}
+                    pages={pages}
                     open={!!editMenu}
                     onOpenChange={(o) => {
                         if (!o) setEditMenu(null);

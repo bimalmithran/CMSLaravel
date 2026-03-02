@@ -2,7 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Menu;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StoreMenuRequest extends FormRequest
 {
@@ -17,9 +20,27 @@ class StoreMenuRequest extends FormRequest
             'name' => 'required|string|unique:menus,name',
             'slug' => ['nullable', 'string', 'max:255', 'unique:menus,slug'],
             'description' => 'nullable|string',
+            'menu_type' => ['required', Rule::in(Menu::types())],
+            'page_id' => ['nullable', 'integer', 'exists:pages,id', 'unique:menus,page_id'],
             'is_active' => 'boolean',
             'position' => 'integer',
             'parent_id' => 'nullable|exists:menus,id',
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            $menuType = $this->input('menu_type');
+            $pageId = $this->input('page_id');
+
+            if ($menuType === Menu::TYPE_LINK && empty($pageId)) {
+                $validator->errors()->add('page_id', 'A page is required for link menus.');
+            }
+
+            if ($menuType !== Menu::TYPE_LINK && ! empty($pageId)) {
+                $validator->errors()->add('page_id', 'Only link menus can be associated with a page.');
+            }
+        });
     }
 }

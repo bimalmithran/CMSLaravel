@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
     container_name: ttshoppingcart_app
     restart: unless-stopped
-    working_dir: /app
+    working_dir: /var/www/html
     environment:
       APP_ENV: local
       APP_DEBUG: "true"
@@ -19,9 +19,9 @@ services:
       QUEUE_CONNECTION: database
       STOREFRONT_API_KEY: your_storefront_api_key_here
     volumes:
-      - ./:/app
+      - ./:/var/www/html
     ports:
-      - "8000:8000"
+      - "8000:80"
     depends_on:
       mysql:
         condition: service_healthy
@@ -30,7 +30,7 @@ services:
         php artisan key:generate --force &&
         php artisan storage:link && 
         php artisan migrate --seed --force &&
-        php artisan serve --host=0.0.0.0 --port=8000"
+        apache2-foreground"
 
   # NEW: Background Queue Worker for Image Compression
   queue_worker:
@@ -39,7 +39,7 @@ services:
       dockerfile: Dockerfile
     container_name: ttshoppingcart_queue
     restart: unless-stopped
-    working_dir: /app
+    working_dir: /var/www/html
     environment:
       APP_ENV: local
       APP_DEBUG: "true"
@@ -52,7 +52,7 @@ services:
       DB_PASSWORD: ttshop_password
       QUEUE_CONNECTION: database
     volumes:
-      - ./:/app
+      - ./:/var/www/html
     depends_on:
       mysql:
         condition: service_healthy
