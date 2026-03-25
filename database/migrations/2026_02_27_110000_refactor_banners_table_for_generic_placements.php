@@ -18,6 +18,9 @@ return new class extends Migration
         Schema::table('banners', function (Blueprint $table) {
             $table->string('title')->nullable()->change();
             $table->string('subtitle')->nullable()->change();
+            $table->text('description')->nullable()->after('subtitle');
+            $table->string('price_text')->nullable()->after('description');
+            $table->string('button_text')->nullable()->after('action_url');
             $table->string('placement')->default('homepage_hero')->after('image_path');
             $table->dropColumn('type');
             $table->index(['placement', 'is_active', 'sort_order'], 'banners_placement_active_sort_idx');
@@ -30,6 +33,9 @@ return new class extends Migration
             $table->dropIndex('banners_placement_active_sort_idx');
             $table->enum('type', ['homepage', 'product_page', 'category_page'])->default('homepage')->after('sort_order');
             $table->dropColumn('placement');
+            $table->dropColumn('button_text');
+            $table->dropColumn('price_text');
+            $table->dropColumn('description');
             $table->string('title')->nullable(false)->change();
             $table->text('subtitle')->nullable()->change();
         });
@@ -42,4 +48,3 @@ return new class extends Migration
         });
     }
 };
-

@@ -16,6 +16,9 @@ class StoreBannerRequest extends FormRequest
         return [
             'title' => ['nullable', 'string', 'max:255'],
             'subtitle' => ['nullable', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+            'price_text' => ['nullable', 'string', 'max:255'],
+            'button_text' => ['nullable', 'string', 'max:255'],
             'action_url' => ['nullable', 'url', 'max:2048'],
             'image_path' => ['required', 'string', 'max:2048'],
             'placement' => ['required', 'string', 'max:100'],
@@ -24,4 +27,3 @@ class StoreBannerRequest extends FormRequest
         ];
     }
 }
-

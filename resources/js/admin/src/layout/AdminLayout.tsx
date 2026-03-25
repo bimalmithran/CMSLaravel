@@ -14,7 +14,9 @@ import {
     Settings,
     ShoppingCart,
     Square,
+    Star,
     Sun,
+    Tags,
     UserCog,
     Users,
 } from 'lucide-react';
@@ -164,6 +166,7 @@ export function AdminLayout() {
         { to: '/menus', label: 'Menus', icon: List },
         { to: '/pages', label: 'Pages', icon: ScrollText },
         { to: '/content-blocks', label: 'Content Blocks', icon: List },
+        { to: '/store-highlights', label: 'Store Highlights', icon: Star },
         { to: '/testimonials', label: 'Testimonials', icon: MessageSquare },
         { to: '/faqs', label: 'FAQs', icon: CircleHelp },
         { to: '/media', label: 'Media', icon: Images },
@@ -172,6 +175,7 @@ export function AdminLayout() {
     const shoppingCartNavItems = [
         { to: '/categories', label: 'Categories', icon: FolderTree },
         { to: '/brands', label: 'Brands', icon: Square },
+        { to: '/tags', label: 'Tags', icon: Tags },
         { to: '/banners', label: 'Banners', icon: Images },
         { to: '/sizes', label: 'Sizes', icon: Ruler },
         { to: '/products', label: 'Products', icon: Package },

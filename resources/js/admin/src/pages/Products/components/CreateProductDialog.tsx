@@ -21,11 +21,13 @@ export function CreateProductDialog({
     categories,
     brands,
     productTypes,
+    tags,
 }: {
     onCreate: (data: Record<string, unknown>) => Promise<void>;
     categories: LookupItem[];
     brands: LookupItem[];
     productTypes: ProductTypeItem[];
+    tags: LookupItem[];
 }) {
     const [open, setOpen] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -41,6 +43,7 @@ export function CreateProductDialog({
     const [isActive, setIsActive] = useState(true);
     const [image, setImage] = useState('');
     const [gallery, setGallery] = useState<string[]>([]);
+    const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
     const [specs, setSpecs] = useState<Record<string, SpecValue>>({});
 
     const selectedType = productTypes.find((t) => t.id === typeId);
@@ -60,6 +63,7 @@ export function CreateProductDialog({
             setBrandId('');
             setImage('');
             setGallery([]);
+            setSelectedTagIds([]);
             setSpecs({});
             setIsActive(true);
         }
@@ -67,6 +71,12 @@ export function CreateProductDialog({
 
     const updateSpec = (key: string, value: SpecValue) => {
         setSpecs((prev) => ({ ...prev, [key]: value }));
+    };
+
+    const toggleTag = (tagId: number, checked: boolean) => {
+        setSelectedTagIds((prev) =>
+            checked ? [...prev, tagId] : prev.filter((id) => id !== tagId),
+        );
     };
 
     // Define the steps and their specific validation logic
@@ -184,6 +194,31 @@ export function CreateProductDialog({
                                 />
                             </div>
                         </div>
+                        <div className="space-y-2">
+                            <Label>Tags</Label>
+                            <div className="grid grid-cols-1 gap-2 rounded-md border p-3 md:grid-cols-2">
+                                {tags.length > 0 ? (
+                                    tags.map((tag) => (
+                                        <label
+                                            key={tag.id}
+                                            className="flex cursor-pointer items-center gap-2 rounded-sm p-1 hover:bg-muted/50"
+                                        >
+                                            <Checkbox
+                                                checked={selectedTagIds.includes(tag.id)}
+                                                onCheckedChange={(checked) =>
+                                                    toggleTag(tag.id, checked === true)
+                                                }
+                                            />
+                                            <span className="text-sm">{tag.name}</span>
+                                        </label>
+                                    ))
+                                ) : (
+                                    <p className="text-sm text-muted-foreground">
+                                        No tags available yet.
+                                    </p>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 ),
             },
@@ -283,9 +318,11 @@ export function CreateProductDialog({
             image,
             gallery,
             specs,
+            selectedTagIds,
             productTypes,
             categories,
             brands,
+            tags,
             DynamicSpecForm,
             selectedType,
         ],
@@ -305,6 +342,7 @@ export function CreateProductDialog({
                 is_active: isActive,
                 image: image || null,
                 gallery: gallery.length > 0 ? gallery : null,
+                tag_ids: selectedTagIds,
                 specs,
             });
             setOpen(false);

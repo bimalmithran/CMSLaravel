@@ -3,6 +3,7 @@ export type SpecValue = string | number | boolean | string[] | null;
 export type ProductTypeItem = { id: number; name: string; slug: string };
 export type LookupItem = { id: number; name: string };
 export type SizeItem = { id: number; name: string; type: string };
+export type TagItem = { id: number; name: string; slug?: string; is_active?: boolean };
 
 export type Product = {
     id: number;
@@ -16,6 +17,7 @@ export type Product = {
     product_type_id: number;
     category_id: number;
     brand_id: number | null;
+    tags?: TagItem[];
 
     productType?: ProductTypeItem;
     category?: LookupItem;

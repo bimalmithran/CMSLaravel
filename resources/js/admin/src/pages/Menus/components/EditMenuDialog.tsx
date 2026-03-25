@@ -159,6 +159,7 @@ export function EditMenuDialog({
                     >
                         <option value="">(none)</option>
                         {parents
+                            .filter((p) => p.menu_type === 'dropdown')
                             .filter((p) => p.id !== menu.id)
                             .map((p) => (
                             <option key={p.id} value={p.id}>

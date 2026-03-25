@@ -15,17 +15,15 @@ class StorefrontBannerResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'          => $this->id,
-            'title'       => $this->title,
-            'subtitle'    => $this->subtitle,
+            'id' => $this->id,
+            'title' => $this->title,
+            'subtitle' => $this->subtitle,
             'description' => $this->description,
-            'price_text  ' => $this->price_text,
+            'price_text' => $this->price_text,
             'button_text' => $this->button_text,
-            'button_link' => $this->button_link,
-            'placement'   => $this->placement,
-
-            // This is the magic. It converts '/storage/uploads/...' into 'https://peenya.in/storage/uploads/...'
-            'image_url'   => $this->image_path ? asset($this->image_path) : null,
+            'action_url' => $this->action_url,
+            'placement' => $this->placement,
+            'image_url' => $this->image_path ? asset($this->image_path) : null,
         ];
     }
 }

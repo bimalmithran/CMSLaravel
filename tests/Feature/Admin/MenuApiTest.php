@@ -45,6 +45,28 @@ class MenuApiTest extends TestCase
         ])->assertStatus(422);
     }
 
+    public function test_parent_menu_must_be_dropdown_type(): void
+    {
+        Sanctum::actingAs($this->createAdminUser(), [], 'admin-api');
+
+        $invalidParent = Menu::create([
+            'name' => 'Top Link',
+            'slug' => 'top-link',
+            'menu_type' => Menu::TYPE_LINK,
+            'is_active' => true,
+            'position' => 1,
+        ]);
+
+        $this->postJson('/api/v1/admin/menus', [
+            'name' => 'Child Item',
+            'slug' => 'child-item',
+            'menu_type' => Menu::TYPE_DROPDOWN,
+            'parent_id' => $invalidParent->id,
+            'is_active' => true,
+        ])->assertStatus(422)
+            ->assertJsonValidationErrors(['parent_id']);
+    }
+
     public function test_public_menus_endpoint_returns_dynamic_menu_structure(): void
     {
         config(['services.storefront.key' => 'test-storefront-key']);

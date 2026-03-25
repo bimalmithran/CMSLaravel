@@ -18,6 +18,8 @@ use App\Http\Controllers\Api\Admin\MenuController as AdminMenuController;
 use App\Http\Controllers\Api\AuthController as CustomerAuthController;
 use App\Http\Controllers\Api\Admin\MediaController as AdminMediaController;
 use App\Http\Controllers\Api\Admin\SettingController as AdminSettingController;
+use App\Http\Controllers\Api\Admin\StoreHighlightController as AdminStoreHighlightController;
+use App\Http\Controllers\Api\Admin\TagController as AdminTagController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\BannerController;
 use App\Http\Controllers\Api\CategoryController;
@@ -29,6 +31,7 @@ use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\TestimonialController;
 use App\Http\Controllers\Api\PageController;
 use App\Http\Controllers\Api\SettingController;
+use App\Http\Controllers\Api\StoreHighlightController;
 use App\Http\Controllers\Api\WishlistController;
 use Illuminate\Support\Facades\Route;
 
@@ -67,6 +70,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/testimonials', [TestimonialController::class, 'index']);
         Route::get('/faqs', [FaqController::class, 'index']);
         Route::get('/banners', [BannerController::class, 'byPlacement']);
+        Route::get('/store-highlights', [StoreHighlightController::class, 'index']);
         Route::get('/settings/global', [SettingController::class, 'global']);
     });
 
@@ -112,6 +116,8 @@ Route::prefix('v1')->group(function () {
             // Brands
             Route::apiResource('brands', AdminBrandController::class);
             Route::apiResource('banners', AdminBannerController::class);
+            Route::get('/tags/list', [AdminTagController::class, 'list']);
+            Route::apiResource('tags', AdminTagController::class);
 
             // Sizes
             Route::apiResource('sizes', AdminSizeController::class);
@@ -128,6 +134,7 @@ Route::prefix('v1')->group(function () {
             Route::apiResource('content-blocks', AdminContentBlockController::class);
             Route::apiResource('testimonials', AdminTestimonialController::class);
             Route::apiResource('faqs', AdminFaqController::class);
+            Route::apiResource('store-highlights', AdminStoreHighlightController::class);
             Route::get('/menus/list', [AdminMenuController::class, 'list']);
             Route::apiResource('menus', AdminMenuController::class);
 

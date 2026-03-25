@@ -42,6 +42,7 @@ export function ProductsPage() {
     const [categories, setCategories] = useState<LookupItem[]>([]);
     const [brands, setBrands] = useState<LookupItem[]>([]);
     const [productTypes, setProductTypes] = useState<ProductTypeItem[]>([]);
+    const [tags, setTags] = useState<LookupItem[]>([]);
 
     // Added viewProduct state
     const [viewProduct, setViewProduct] = useState<Product | null>(null);
@@ -80,16 +81,17 @@ export function ProductsPage() {
 
     const loadDependencies = React.useCallback(async () => {
         try {
-            // Removed sizes API call to fix the unused variable error
-            const [catRes, brandRes, typeRes] = await Promise.all([
+            const [catRes, brandRes, typeRes, tagRes] = await Promise.all([
                 apiFetch<LookupItem[]>('/api/v1/admin/categories/list'),
                 apiFetch<{ data: LookupItem[] }>('/api/v1/admin/brands'),
                 apiFetch<ProductTypeItem[]>('/api/v1/admin/product-types/list'),
+                apiFetch<LookupItem[]>('/api/v1/admin/tags/list'),
             ]);
 
             if (catRes.success) setCategories(catRes.data);
             if (brandRes.success) setBrands(brandRes.data.data);
             if (typeRes.success) setProductTypes(typeRes.data);
+            if (tagRes.success) setTags(tagRes.data);
         } catch (err) {
             console.error('Failed to load dependencies', err);
         }
@@ -317,6 +319,7 @@ export function ProductsPage() {
                     categories={categories}
                     brands={brands}
                     productTypes={productTypes}
+                    tags={tags}
                 />
             </div>
 
@@ -362,6 +365,7 @@ export function ProductsPage() {
                     categories={categories}
                     brands={brands}
                     productTypes={productTypes}
+                    tags={tags}
                 />
             )}
         </div>

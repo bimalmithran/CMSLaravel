@@ -19,6 +19,8 @@ import { PagesPage } from './pages/Pages/PagesPage'
 import { ProductsPage } from './pages/Products/ProductsPage'
 import { SettingsPage } from './pages/Settings/SettingsPage'
 import { SizesPage } from './pages/Sizes/SizesPage'
+import { StoreHighlightsPage } from './pages/StoreHighlights/StoreHighlightsPage'
+import { TagsPage } from './pages/Tags/TagsPage'
 import { TestimonialsPage } from './pages/Testimonials/TestimonialsPage'
 
 export function AdminApp() {
@@ -33,11 +35,13 @@ export function AdminApp() {
             <Route path='/menus' element={<MenusPage />} />
             <Route path="/categories" element={<CategoriesPage />} />
             <Route path="/brands" element={<BrandsPage />} />
+            <Route path="/tags" element={<TagsPage />} />
             <Route path="/banners" element={<BannersPage />} />
             <Route path="/sizes" element={<SizesPage />} />
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/pages" element={<PagesPage />} />
             <Route path="/content-blocks" element={<ContentBlocksPage />} />
+            <Route path="/store-highlights" element={<StoreHighlightsPage />} />
             <Route path="/testimonials" element={<TestimonialsPage />} />
             <Route path="/faqs" element={<FaqsPage />} />
             <Route path="/orders" element={<OrdersPage />} />

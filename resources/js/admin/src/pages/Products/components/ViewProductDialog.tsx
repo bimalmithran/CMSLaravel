@@ -183,6 +183,25 @@ export function ViewProductDialog({
                                 {product.brand?.name || 'N/A'}
                             </p>
                         </div>
+                        <div className="col-span-2">
+                            <p className="text-xs text-muted-foreground">
+                                Tags
+                            </p>
+                            <div className="mt-1 flex flex-wrap gap-2">
+                                {product.tags && product.tags.length > 0 ? (
+                                    product.tags.map((tag) => (
+                                        <span
+                                            key={tag.id}
+                                            className="rounded-full bg-muted px-2 py-1 text-xs"
+                                        >
+                                            {tag.name}
+                                        </span>
+                                    ))
+                                ) : (
+                                    <span className="font-medium">N/A</span>
+                                )}
+                            </div>
+                        </div>
                     </div>
 
                     {/* Dynamic Specifications */}

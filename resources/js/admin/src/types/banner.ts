@@ -2,6 +2,9 @@ export type Banner = {
     id: number;
     title: string | null;
     subtitle: string | null;
+    description: string | null;
+    price_text: string | null;
+    button_text: string | null;
     action_url: string | null;
     image_path: string;
     placement: string;
@@ -14,6 +17,9 @@ export type Banner = {
 export type BannerPayload = {
     title?: string | null;
     subtitle?: string | null;
+    description?: string | null;
+    price_text?: string | null;
+    button_text?: string | null;
     action_url?: string | null;
     image_path: string;
     placement: string;
@@ -27,4 +33,3 @@ export type PaginatedResponse<T> = {
     last_page: number;
     total: number;
 };
-

@@ -151,11 +151,13 @@ export function CreateMenuDialog({
                         }
                     >
                         <option value="">(none)</option>
-                        {parents.map((p) => (
+                        {parents
+                            .filter((p) => p.menu_type === 'dropdown')
+                            .map((p) => (
                             <option key={p.id} value={p.id}>
                                 {p.name}
                             </option>
-                        ))}
+                            ))}
                     </select>
                 </div>
                 <div className="grid grid-cols-2 gap-3">

@@ -14,7 +14,7 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Product::with(['category', 'brand', 'productType']);
+        $query = Product::with(['category', 'brand', 'productType', 'tags']);
 
         if ($request->has('search')) {
             $search = $request->search;
@@ -36,7 +36,7 @@ class ProductController extends Controller
 
     public function show($id)
     {
-        $product = Product::with(['category', 'brand', 'productType', 'sizes'])->findOrFail($id);
+        $product = Product::with(['category', 'brand', 'productType', 'sizes', 'tags'])->findOrFail($id);
 
         return response()->json(['success' => true, 'data' => $this->formatProductWithSpecs($product)]);
     }
@@ -58,11 +58,12 @@ class ProductController extends Controller
             $product = Product::create($baseData);
             $strategy->store($product, $validatedSpecs);
             $this->syncSizes($product, $request->input('sizes', []));
+            $this->syncTags($product, $request->input('tag_ids', []));
 
             DB::commit();
 
             // Reload base relations and format dynamically
-            $product->load(['category', 'brand', 'productType', 'sizes']);
+            $product->load(['category', 'brand', 'productType', 'sizes', 'tags']);
             return response()->json([
                 'success' => true,
                 'data' => $this->formatProductWithSpecs($product)
@@ -92,11 +93,12 @@ class ProductController extends Controller
             $product->update($baseData);
             $strategy->update($product, $validatedSpecs);
             $this->syncSizes($product, $request->input('sizes', []));
+            $this->syncTags($product, $request->input('tag_ids', []));
 
             DB::commit();
 
             // Reload base relations and format dynamically
-            $product->load(['category', 'brand', 'productType', 'sizes']);
+            $product->load(['category', 'brand', 'productType', 'sizes', 'tags']);
             return response()->json([
                 'success' => true,
                 'data' => $this->formatProductWithSpecs($product)
@@ -128,6 +130,8 @@ class ProductController extends Controller
             $product->load($specRelation);
         }
 
+        $product->loadMissing('tags');
+
         $productArray = $product->toArray();
         $productArray['specs'] = $product->$specRelation ?? [];
 
@@ -157,6 +161,8 @@ class ProductController extends Controller
             'stock' => 'required|integer|min:0',
             'image' => 'nullable|string',
             'gallery' => 'nullable|array',
+            'tag_ids' => 'nullable|array',
+            'tag_ids.*' => 'integer|exists:tags,id',
             'is_featured' => 'boolean',
             'is_active' => 'boolean',
         ]);
@@ -180,5 +186,11 @@ class ProductController extends Controller
             }
         }
         $product->sizes()->sync($syncData);
+    }
+
+    private function syncTags(Product $product, array $tagIds): void
+    {
+        $normalizedTagIds = array_values(array_unique(array_map('intval', $tagIds)));
+        $product->tags()->sync($normalizedTagIds);
     }
 }

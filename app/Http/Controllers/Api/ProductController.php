@@ -11,7 +11,7 @@ class ProductController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Product::query()->active();
+        $query = Product::query()->active()->with('tags');
 
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->integer('category_id'));
@@ -23,6 +23,15 @@ class ProductController extends Controller
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('description', 'like', "%{$search}%")
                     ->orWhere('sku', 'like', "%{$search}%");
+            });
+        }
+
+        $tagSlugs = $this->extractTagSlugs($request);
+        if ($tagSlugs !== []) {
+            $query->whereHas('tags', function ($tagQuery) use ($tagSlugs): void {
+                $tagQuery
+                    ->where('is_active', true)
+                    ->whereIn('slug', $tagSlugs);
             });
         }
 
@@ -44,12 +53,19 @@ class ProductController extends Controller
         $sortBy = $request->string('sort_by', 'created_at')->toString();
         $sortOrder = $request->string('sort_order', 'desc')->toString() === 'asc' ? 'asc' : 'desc';
 
-        $allowedSorts = ['created_at', 'price', 'views', 'rating', 'name'];
-        if (!in_array($sortBy, $allowedSorts, true)) {
+        $sortMap = [
+            'created_at' => 'created_at',
+            'price' => 'price',
+            'views' => 'views',
+            'rating' => 'rating_avg',
+            'name' => 'name',
+        ];
+
+        if (! array_key_exists($sortBy, $sortMap)) {
             $sortBy = 'created_at';
         }
 
-        $query->orderBy($sortBy, $sortOrder);
+        $query->orderBy($sortMap[$sortBy], $sortOrder);
 
         $perPage = (int) $request->input('per_page', 15);
         $perPage = max(1, min(100, $perPage));
@@ -64,7 +80,10 @@ class ProductController extends Controller
 
     public function show(int $id): JsonResponse
     {
-        $product = Product::with(['reviews' => fn ($q) => $q->where('is_approved', true)])
+        $product = Product::with([
+                'reviews' => fn ($q) => $q->where('is_approved', true),
+                'tags',
+            ])
             ->active()
             ->findOrFail($id);
 
@@ -120,6 +139,7 @@ class ProductController extends Controller
         }
 
         $products = Product::active()
+            ->with('tags')
             ->where(function ($query) use ($q) {
                 $query->where('name', 'like', "%{$q}%")
                     ->orWhere('description', 'like', "%{$q}%")
@@ -133,5 +153,27 @@ class ProductController extends Controller
             'data' => $products,
         ]);
     }
-}
 
+    /**
+     * @return array<int, string>
+     */
+    private function extractTagSlugs(Request $request): array
+    {
+        $rawTags = $request->input('tags');
+
+        if (is_string($rawTags) && trim($rawTags) !== '') {
+            return array_values(array_filter(array_map('trim', explode(',', $rawTags))));
+        }
+
+        if (is_array($rawTags)) {
+            return array_values(array_filter(array_map(
+                static fn ($tag): string => trim((string) $tag),
+                $rawTags,
+            )));
+        }
+
+        $singleTag = trim($request->string('tag')->toString());
+
+        return $singleTag !== '' ? [$singleTag] : [];
+    }
+}

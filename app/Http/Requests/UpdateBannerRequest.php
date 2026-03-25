@@ -16,6 +16,9 @@ class UpdateBannerRequest extends FormRequest
         return [
             'title' => ['sometimes', 'nullable', 'string', 'max:255'],
             'subtitle' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'description' => ['sometimes', 'nullable', 'string'],
+            'price_text' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'button_text' => ['sometimes', 'nullable', 'string', 'max:255'],
             'action_url' => ['sometimes', 'nullable', 'url', 'max:2048'],
             'image_path' => ['sometimes', 'string', 'max:2048'],
             'placement' => ['sometimes', 'string', 'max:100'],
@@ -24,4 +27,3 @@ class UpdateBannerRequest extends FormRequest
         ];
     }
 }
-

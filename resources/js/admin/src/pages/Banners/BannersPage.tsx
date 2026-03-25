@@ -37,6 +37,7 @@ import type { Banner, BannerPayload, PaginatedResponse } from '../../types/banne
 
 const PLACEMENT_OPTIONS = [
     { value: 'homepage_hero', label: 'Homepage Hero' },
+    { value: 'homepage_featured_banner', label: 'Homepage Featured Banner' },
     { value: 'homepage_sidebar', label: 'Homepage Sidebar' },
     { value: 'checkout_sidebar', label: 'Checkout Sidebar' },
     { value: 'category_top', label: 'Category Top' },
@@ -45,6 +46,9 @@ const PLACEMENT_OPTIONS = [
 type BannerFormValues = {
     title: string;
     subtitle: string;
+    description: string;
+    price_text: string;
+    button_text: string;
     action_url: string;
     image_path: string;
     placement: string;
@@ -56,6 +60,9 @@ function toFormValues(item?: Banner): BannerFormValues {
     return {
         title: item?.title ?? '',
         subtitle: item?.subtitle ?? '',
+        description: item?.description ?? '',
+        price_text: item?.price_text ?? '',
+        button_text: item?.button_text ?? '',
         action_url: item?.action_url ?? '',
         image_path: item?.image_path ?? '',
         placement: item?.placement ?? 'homepage_hero',
@@ -112,6 +119,38 @@ function BannerForm({
                     placeholder="Up to 50% off on Diamond Rings"
                     rows={3}
                 />
+            </div>
+
+            <div className="space-y-2">
+                <Label htmlFor="banner-description">Description</Label>
+                <Textarea
+                    id="banner-description"
+                    value={value.description}
+                    onChange={(e) => onChange({ ...value, description: e.target.value })}
+                    placeholder="Collection highlight or supporting copy"
+                    rows={3}
+                />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                    <Label htmlFor="banner-price-text">Price Text</Label>
+                    <Input
+                        id="banner-price-text"
+                        value={value.price_text}
+                        onChange={(e) => onChange({ ...value, price_text: e.target.value })}
+                        placeholder="Starting at £1209.00"
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="banner-button-text">Button Text</Label>
+                    <Input
+                        id="banner-button-text"
+                        value={value.button_text}
+                        onChange={(e) => onChange({ ...value, button_text: e.target.value })}
+                        placeholder="Shop Now"
+                    />
+                </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -183,6 +222,9 @@ function CreateBannerDialog({
             await onCreate({
                 title: form.title || null,
                 subtitle: form.subtitle || null,
+                description: form.description || null,
+                price_text: form.price_text || null,
+                button_text: form.button_text || null,
                 action_url: form.action_url || null,
                 image_path: form.image_path,
                 placement: form.placement,
@@ -262,6 +304,9 @@ function EditBannerDialog({
             await onUpdate(banner.id, {
                 title: form.title || null,
                 subtitle: form.subtitle || null,
+                description: form.description || null,
+                price_text: form.price_text || null,
+                button_text: form.button_text || null,
                 action_url: form.action_url || null,
                 image_path: form.image_path,
                 placement: form.placement,
@@ -319,6 +364,18 @@ function ViewBannerDialog({
                 <div>
                     <div className="text-xs text-muted-foreground">Subtitle</div>
                     <div>{banner.subtitle || '(none)'}</div>
+                </div>
+                <div>
+                    <div className="text-xs text-muted-foreground">Description</div>
+                    <div>{banner.description || '(none)'}</div>
+                </div>
+                <div>
+                    <div className="text-xs text-muted-foreground">Price Text</div>
+                    <div>{banner.price_text || '(none)'}</div>
+                </div>
+                <div>
+                    <div className="text-xs text-muted-foreground">Button Text</div>
+                    <div>{banner.button_text || '(none)'}</div>
                 </div>
                 <div>
                     <div className="text-xs text-muted-foreground">Placement</div>

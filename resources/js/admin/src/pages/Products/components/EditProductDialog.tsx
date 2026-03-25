@@ -27,6 +27,7 @@ interface EditProductProps {
     categories: LookupItem[];
     brands: LookupItem[];
     productTypes: ProductTypeItem[];
+    tags: LookupItem[];
 }
 
 export function EditProductDialog({
@@ -37,6 +38,7 @@ export function EditProductDialog({
     categories,
     brands,
     productTypes,
+    tags,
 }: EditProductProps) {
     const [saving, setSaving] = useState(false);
 
@@ -51,6 +53,7 @@ export function EditProductDialog({
     const [isActive, setIsActive] = useState(true);
     const [image, setImage] = useState('');
     const [gallery, setGallery] = useState<string[]>([]);
+    const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
     const [specs, setSpecs] = useState<Record<string, SpecValue>>({});
 
     const selectedType = productTypes.find((t) => t.id === typeId);
@@ -70,6 +73,7 @@ export function EditProductDialog({
             setIsActive(product.is_active ?? true);
             setImage(product.image ?? '');
             setGallery(product.gallery || []);
+            setSelectedTagIds((product.tags ?? []).map((tag) => tag.id));
 
             setSpecs(
                 (product.specs as Record<string, SpecValue>) ||
@@ -83,6 +87,12 @@ export function EditProductDialog({
 
     const updateSpec = (key: string, value: SpecValue) => {
         setSpecs((prev) => ({ ...prev, [key]: value }));
+    };
+
+    const toggleTag = (tagId: number, checked: boolean) => {
+        setSelectedTagIds((prev) =>
+            checked ? [...prev, tagId] : prev.filter((id) => id !== tagId),
+        );
     };
 
     const formSteps: Step[] = useMemo(
@@ -200,6 +210,31 @@ export function EditProductDialog({
                                 />
                             </div>
                         </div>
+                        <div className="space-y-2">
+                            <Label>Tags</Label>
+                            <div className="grid grid-cols-1 gap-2 rounded-md border p-3 md:grid-cols-2">
+                                {tags.length > 0 ? (
+                                    tags.map((tag) => (
+                                        <label
+                                            key={tag.id}
+                                            className="flex cursor-pointer items-center gap-2 rounded-sm p-1 hover:bg-muted/50"
+                                        >
+                                            <Checkbox
+                                                checked={selectedTagIds.includes(tag.id)}
+                                                onCheckedChange={(checked) =>
+                                                    toggleTag(tag.id, checked === true)
+                                                }
+                                            />
+                                            <span className="text-sm">{tag.name}</span>
+                                        </label>
+                                    ))
+                                ) : (
+                                    <p className="text-sm text-muted-foreground">
+                                        No tags available yet.
+                                    </p>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 ),
             },
@@ -300,9 +335,11 @@ export function EditProductDialog({
             image,
             gallery,
             specs,
+            selectedTagIds,
             productTypes,
             categories,
             brands,
+            tags,
             DynamicSpecForm,
             selectedType,
         ],
@@ -322,6 +359,7 @@ export function EditProductDialog({
                 is_active: isActive,
                 image: image || null,
                 gallery: gallery.length > 0 ? gallery : null,
+                tag_ids: selectedTagIds,
                 specs,
             });
             onOpenChange(false);

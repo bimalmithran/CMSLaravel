@@ -26,7 +26,12 @@ class UpdateMenuRequest extends FormRequest
             'page_id' => ['nullable', 'integer', 'exists:pages,id', Rule::unique('menus', 'page_id')->ignore($id)],
             'is_active' => 'boolean',
             'position' => 'integer',
-            'parent_id' => ['nullable', 'exists:menus,id', Rule::notIn([(int) $id])],
+            'parent_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('menus', 'id')->where('menu_type', Menu::TYPE_DROPDOWN),
+                Rule::notIn([(int) $id]),
+            ],
         ];
     }
 

@@ -9,6 +9,9 @@ class Banner extends Model
     protected $fillable = [
         'title',
         'subtitle',
+        'description',
+        'price_text',
+        'button_text',
         'action_url',
         'image_path',
         'placement',
