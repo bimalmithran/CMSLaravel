@@ -10,14 +10,14 @@ class TagSeeder extends Seeder
 {
     public function run(): void
     {
-        $name = 'New Arrivals';
-
-        Tag::updateOrCreate(
-            ['slug' => Str::slug($name)],
-            [
-                'name' => $name,
-                'is_active' => true,
-            ],
-        );
+        foreach (['New Arrivals', 'New Products', 'Trending Products'] as $name) {
+            Tag::updateOrCreate(
+                ['slug' => Str::slug($name)],
+                [
+                    'name' => $name,
+                    'is_active' => true,
+                ],
+            );
+        }
     }
 }
