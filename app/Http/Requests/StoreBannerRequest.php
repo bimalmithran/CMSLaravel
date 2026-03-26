@@ -21,7 +21,7 @@ class StoreBannerRequest extends FormRequest
             'button_text' => ['nullable', 'string', 'max:255'],
             'action_url' => ['nullable', 'url', 'max:2048'],
             'image_path' => ['required', 'string', 'max:2048'],
-            'placement' => ['required', 'string', 'max:100'],
+            'placement' => ['required', 'string', 'max:100', 'exists:banner_placements,key'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'is_active' => ['nullable', 'boolean'],
         ];

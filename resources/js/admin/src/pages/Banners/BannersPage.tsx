@@ -33,15 +33,7 @@ import { DataTable } from '../../components/DataTable';
 import { MediaPicker } from '../../components/MediaPicker';
 import { FullScreenLoader } from '../../components/ui/FullScreenLoader';
 import { apiFetch } from '../../lib/api';
-import type { Banner, BannerPayload, PaginatedResponse } from '../../types/banner';
-
-const PLACEMENT_OPTIONS = [
-    { value: 'homepage_hero', label: 'Homepage Hero' },
-    { value: 'homepage_featured_banner', label: 'Homepage Featured Banner' },
-    { value: 'homepage_sidebar', label: 'Homepage Sidebar' },
-    { value: 'checkout_sidebar', label: 'Checkout Sidebar' },
-    { value: 'category_top', label: 'Category Top' },
-];
+import type { Banner, BannerPayload, BannerPlacement, PaginatedResponse } from '../../types/banner';
 
 type BannerFormValues = {
     title: string;
@@ -74,9 +66,11 @@ function toFormValues(item?: Banner): BannerFormValues {
 function BannerForm({
     value,
     onChange,
+    placements,
 }: {
     value: BannerFormValues;
     onChange: (next: BannerFormValues) => void;
+    placements: BannerPlacement[];
 }) {
     return (
         <div className="space-y-4">
@@ -100,9 +94,9 @@ function BannerForm({
                             <SelectValue placeholder="Select placement" />
                         </SelectTrigger>
                         <SelectContent>
-                            {PLACEMENT_OPTIONS.map((option) => (
-                                <SelectItem key={option.value} value={option.value}>
-                                    {option.label}
+                            {placements.map((p) => (
+                                <SelectItem key={p.key} value={p.key}>
+                                    {p.label}
                                 </SelectItem>
                             ))}
                         </SelectContent>
@@ -206,8 +200,10 @@ function BannerForm({
 
 function CreateBannerDialog({
     onCreate,
+    placements,
 }: {
     onCreate: (payload: BannerPayload) => Promise<void>;
+    placements: BannerPlacement[];
 }) {
     const [open, setOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
@@ -265,7 +261,7 @@ function CreateBannerDialog({
                         {error}
                     </div>
                 )}
-                <BannerForm value={form} onChange={setForm} />
+                <BannerForm value={form} onChange={setForm} placements={placements} />
                 <DialogFooter
                     onCancel={() => setOpen(false)}
                     isSaving={submitting}
@@ -281,11 +277,13 @@ function EditBannerDialog({
     open,
     onOpenChange,
     onUpdate,
+    placements,
 }: {
     banner: Banner;
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onUpdate: (id: number, payload: BannerPayload) => Promise<void>;
+    placements: BannerPlacement[];
 }) {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -334,7 +332,7 @@ function EditBannerDialog({
                         {error}
                     </div>
                 )}
-                <BannerForm value={form} onChange={setForm} />
+                <BannerForm value={form} onChange={setForm} placements={placements} />
                 <DialogFooter
                     onCancel={() => onOpenChange(false)}
                     isSaving={submitting}
@@ -424,6 +422,7 @@ export function BannersPage() {
     const [lastPage, setLastPage] = useState(1);
     const [isSaving, setIsSaving] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [placements, setPlacements] = useState<BannerPlacement[]>([]);
 
     const [viewBanner, setViewBanner] = useState<Banner | null>(null);
     const [editBanner, setEditBanner] = useState<Banner | null>(null);
@@ -467,6 +466,12 @@ export function BannersPage() {
     useEffect(() => {
         void load();
     }, [load]);
+
+    useEffect(() => {
+        void apiFetch<BannerPlacement[]>('/api/v1/admin/banners/placements').then((res) => {
+            if (res.success) setPlacements(res.data);
+        });
+    }, []);
 
     async function createBanner(payload: BannerPayload) {
         setIsSaving(true);
@@ -638,7 +643,7 @@ export function BannersPage() {
                         Manage hero sliders and promotional banners by placement.
                     </div>
                 </div>
-                <CreateBannerDialog onCreate={createBanner} />
+                <CreateBannerDialog onCreate={createBanner} placements={placements} />
             </div>
 
             <div className="flex items-center gap-2">
@@ -651,9 +656,9 @@ export function BannersPage() {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All placements</SelectItem>
-                        {PLACEMENT_OPTIONS.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                                {option.label}
+                        {placements.map((p) => (
+                            <SelectItem key={p.key} value={p.key}>
+                                {p.label}
                             </SelectItem>
                         ))}
                     </SelectContent>
@@ -690,6 +695,7 @@ export function BannersPage() {
                     open={!!editBanner}
                     onOpenChange={(open) => !open && setEditBanner(null)}
                     onUpdate={updateBanner}
+                    placements={placements}
                 />
             )}
 

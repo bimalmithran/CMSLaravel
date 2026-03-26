@@ -115,6 +115,7 @@ Route::prefix('v1')->group(function () {
 
             // Brands
             Route::apiResource('brands', AdminBrandController::class);
+            Route::get('/banners/placements', [AdminBannerController::class, 'placementsList']);
             Route::apiResource('banners', AdminBannerController::class);
             Route::get('/tags/list', [AdminTagController::class, 'list']);
             Route::apiResource('tags', AdminTagController::class);

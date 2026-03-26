@@ -1,3 +1,10 @@
+export type BannerPlacement = {
+    key: string;
+    label: string;
+    description: string | null;
+    sort_order: number;
+};
+
 export type Banner = {
     id: number;
     title: string | null;
