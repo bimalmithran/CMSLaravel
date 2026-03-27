@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\SocialAuthController;
 use App\Http\Controllers\Api\Admin\MediaController as AdminMediaController;
 use App\Http\Controllers\Api\Admin\SettingController as AdminSettingController;
 use App\Http\Controllers\Api\Admin\StoreHighlightController as AdminStoreHighlightController;
+use App\Http\Controllers\Api\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Api\Admin\TagController as AdminTagController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\BannerController;
@@ -36,6 +37,8 @@ use App\Http\Controllers\Api\StoreHighlightController;
 use App\Http\Controllers\Api\NewsletterController;
 use App\Http\Controllers\Api\WishlistController;
 use App\Http\Controllers\Api\ReviewController;
+use App\Http\Controllers\Api\ContactController;
+use App\Http\Controllers\Api\Admin\ContactController as AdminContactController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', fn() => response()->json(['status' => 'ok']));
@@ -76,6 +79,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/store-highlights', [StoreHighlightController::class, 'index']);
         Route::get('/settings/global', [SettingController::class, 'global']);
         Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe']);
+        Route::post('/contact', [ContactController::class, 'store']);
     });
 
     // Customer auth (token-based)
@@ -164,6 +168,16 @@ Route::prefix('v1')->group(function () {
             // Admin settings
             Route::get('/settings', [AdminSettingController::class, 'index']);
             Route::put('/settings/bulk', [AdminSettingController::class, 'bulkUpdate']);
+
+            // Admin reviews
+            Route::get('/reviews', [AdminReviewController::class, 'index']);
+            Route::put('/reviews/{id}/approval', [AdminReviewController::class, 'updateApproval']);
+            Route::delete('/reviews/{id}', [AdminReviewController::class, 'destroy']);
+
+            // Admin contact inquiries
+            Route::get('/contact-inquiries', [AdminContactController::class, 'index']);
+            Route::put('/contact-inquiries/{id}/read', [AdminContactController::class, 'markRead']);
+            Route::delete('/contact-inquiries/{id}', [AdminContactController::class, 'destroy']);
         });
     });
 });

@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 
 class ReviewController extends Controller
 {
-    public function store(Request $request, int $productId): JsonResponse
+    public function store(Request $request, int $id): JsonResponse
     {
         $customer = auth('customer')->user();
 
@@ -21,7 +21,7 @@ class ReviewController extends Controller
             ], 401);
         }
 
-        $product = Product::active()->find($productId);
+        $product = Product::active()->find($id);
 
         if (!$product) {
             return response()->json([
@@ -31,7 +31,7 @@ class ReviewController extends Controller
         }
 
         // Prevent duplicate reviews from the same customer
-        $existing = Review::where('product_id', $productId)
+        $existing = Review::where('product_id', $id)
             ->where('customer_id', $customer->id)
             ->first();
 
@@ -48,7 +48,7 @@ class ReviewController extends Controller
         ]);
 
         Review::create([
-            'product_id'  => $productId,
+            'product_id'  => $id,
             'customer_id' => $customer->id,
             'rating'      => $validated['rating'],
             'comment'     => $validated['comment'] ?? null,

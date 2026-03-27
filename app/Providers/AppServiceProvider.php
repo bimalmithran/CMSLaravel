@@ -9,6 +9,8 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use App\Contracts\ImageOptimizerInterface;
 use App\Services\Media\InterventionOptimizer;
+use App\Models\Review;
+use App\Observers\ReviewObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -26,6 +28,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        Review::observe(ReviewObserver::class);
     }
 
     /**
