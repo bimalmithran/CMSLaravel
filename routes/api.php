@@ -35,6 +35,7 @@ use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\StoreHighlightController;
 use App\Http\Controllers\Api\NewsletterController;
 use App\Http\Controllers\Api\WishlistController;
+use App\Http\Controllers\Api\ReviewController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', fn() => response()->json(['status' => 'ok']));
@@ -86,6 +87,9 @@ Route::prefix('v1')->group(function () {
         Route::get('/auth/me', [CustomerAuthController::class, 'me']);
         Route::post('/auth/logout', [CustomerAuthController::class, 'logout']);
         Route::put('/auth/profile', [CustomerAuthController::class, 'updateProfile']);
+
+        // Product reviews (require customer auth)
+        Route::post('/products/{id}/reviews', [ReviewController::class, 'store']);
     });
 
     // Cart (guest or logged-in; uses session_id or customer token)

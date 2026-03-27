@@ -81,7 +81,7 @@ class ProductController extends Controller
     public function show(int $id): JsonResponse
     {
         $product = Product::with([
-                'reviews' => fn ($q) => $q->where('is_approved', true),
+                'reviews' => fn ($q) => $q->where('is_approved', true)->with('customer'),
                 'tags',
                 'brand',
             ])

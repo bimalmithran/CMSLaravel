@@ -13,6 +13,7 @@ class Review extends Model
     protected $fillable = [
         'product_id',
         'user_id',
+        'customer_id',
         'rating',
         'comment',
         'is_approved',
@@ -29,7 +30,11 @@ class Review extends Model
 
     public function user(): BelongsTo
     {
-        // Assumes you have standard Laravel User model
-        return $this->belongsTo(User::class); 
+        return $this->belongsTo(User::class);
+    }
+
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
     }
 }
