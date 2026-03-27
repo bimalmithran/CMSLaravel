@@ -17,7 +17,8 @@ services:
       DB_USERNAME: ttshop_user
       DB_PASSWORD: ttshop_password
       QUEUE_CONNECTION: database
-      STOREFRONT_API_KEY: your_storefront_api_key_here
+      STOREFRONT_API_KEY: ${STOREFRONT_API_KEY:-your_storefront_api_key_here}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
     volumes:
       - ./:/var/www/html
     ports:
@@ -51,6 +52,8 @@ services:
       DB_USERNAME: ttshop_user
       DB_PASSWORD: ttshop_password
       QUEUE_CONNECTION: database
+      STOREFRONT_API_KEY: ${STOREFRONT_API_KEY:-your_storefront_api_key_here}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
     volumes:
       - ./:/var/www/html
     depends_on:

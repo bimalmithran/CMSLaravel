@@ -40,11 +40,16 @@ class AuthController extends Controller
     public function login(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required', 'string'],
+            'identifier' => ['required', 'string'], // email or phone number
+            'password'   => ['required', 'string'],
         ]);
 
-        $customer = Customer::where('email', $validated['email'])->first();
+        $identifier = $validated['identifier'];
+
+        // Try email first, then phone
+        $customer = filter_var($identifier, FILTER_VALIDATE_EMAIL)
+            ? Customer::where('email', $identifier)->first()
+            : Customer::where('phone', $identifier)->orWhere('email', $identifier)->first();
 
         if (!$customer || !Hash::check($validated['password'], $customer->password)) {
             return response()->json([

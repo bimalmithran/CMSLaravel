@@ -39,4 +39,8 @@ return [
         'key' => env('STOREFRONT_API_KEY'),
     ],
 
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+    ],
+
 ];

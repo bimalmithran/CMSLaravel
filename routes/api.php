@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\Admin\ProductTypeController as AdminProductTypeCont
 use App\Http\Controllers\Api\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Api\Admin\MenuController as AdminMenuController;
 use App\Http\Controllers\Api\AuthController as CustomerAuthController;
+use App\Http\Controllers\Api\SocialAuthController;
 use App\Http\Controllers\Api\Admin\MediaController as AdminMediaController;
 use App\Http\Controllers\Api\Admin\SettingController as AdminSettingController;
 use App\Http\Controllers\Api\Admin\StoreHighlightController as AdminStoreHighlightController;
@@ -79,6 +80,7 @@ Route::prefix('v1')->group(function () {
     // Customer auth (token-based)
     Route::post('/auth/register', [CustomerAuthController::class, 'register']);
     Route::post('/auth/login', [CustomerAuthController::class, 'login']);
+    Route::post('/auth/google', [SocialAuthController::class, 'googleLogin']);
 
     Route::middleware('auth:customer')->group(function () {
         Route::get('/auth/me', [CustomerAuthController::class, 'me']);
