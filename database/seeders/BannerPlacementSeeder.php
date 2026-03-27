@@ -52,6 +52,12 @@ class BannerPlacementSeeder extends Seeder
                 'description' => 'Banner shown at the top of category listing pages.',
                 'sort_order' => 7,
             ],
+            [
+                'key' => 'shop_sidebar',
+                'label' => 'Shop Sidebar',
+                'description' => 'Banner displayed in the sidebar of the shop/search listing page.',
+                'sort_order' => 8,
+            ],
         ];
 
         foreach ($placements as $placement) {
