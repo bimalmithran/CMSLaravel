@@ -25,6 +25,7 @@ class StoreMenuRequest extends FormRequest
             'is_active' => 'boolean',
             'position' => 'integer',
             'parent_id' => ['nullable', 'integer', Rule::exists('menus', 'id')->where('menu_type', Menu::TYPE_DROPDOWN)],
+            'placement' => ['nullable', Rule::in([Menu::PLACEMENT_HEADER, Menu::PLACEMENT_FOOTER])],
         ];
     }
 

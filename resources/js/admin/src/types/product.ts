@@ -9,6 +9,8 @@ export type Product = {
     id: number;
     name: string;
     sku: string;
+    short_description?: string | null;
+    description?: string | null;
     price: number;
     stock: number;
     is_active: boolean;
@@ -20,6 +22,7 @@ export type Product = {
     tags?: TagItem[];
 
     productType?: ProductTypeItem;
+    product_type?: ProductTypeItem;
     category?: LookupItem;
     brand?: LookupItem;
 

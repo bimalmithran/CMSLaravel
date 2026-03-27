@@ -138,8 +138,8 @@ export function ViewProductDialog({
                             <span className="rounded bg-muted px-2 py-0.5 font-mono text-foreground">
                                 SKU: {product.sku}
                             </span>
-                            {product.productType && (
-                                <span>Type: {product.productType.name}</span>
+                            {(product.product_type ?? product.productType) && (
+                                <span>Type: {(product.product_type ?? product.productType)?.name}</span>
                             )}
                             <span
                                 className={`rounded-full px-2 py-0.5 text-xs font-medium ${product.is_active ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}
@@ -203,6 +203,27 @@ export function ViewProductDialog({
                             </div>
                         </div>
                     </div>
+
+                    {/* Descriptions */}
+                    {(product.short_description || product.description) && (
+                        <div className="space-y-3">
+                            <h3 className="border-b pb-2 text-sm font-semibold tracking-wider text-muted-foreground uppercase">
+                                Description
+                            </h3>
+                            {product.short_description && (
+                                <div>
+                                    <p className="text-xs text-muted-foreground">Short Description</p>
+                                    <p className="mt-0.5 text-sm">{String(product.short_description)}</p>
+                                </div>
+                            )}
+                            {product.description && (
+                                <div>
+                                    <p className="text-xs text-muted-foreground">Description</p>
+                                    <p className="mt-0.5 whitespace-pre-wrap text-sm">{String(product.description)}</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* Dynamic Specifications */}
                     {hasSpecs && (

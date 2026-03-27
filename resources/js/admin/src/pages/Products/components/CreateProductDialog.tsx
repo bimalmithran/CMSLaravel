@@ -41,6 +41,8 @@ export function CreateProductDialog({
     const [price, setPrice] = useState<number | ''>('');
     const [stock, setStock] = useState<number | ''>('');
     const [isActive, setIsActive] = useState(true);
+    const [shortDescription, setShortDescription] = useState('');
+    const [description, setDescription] = useState('');
     const [image, setImage] = useState('');
     const [gallery, setGallery] = useState<string[]>([]);
     const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
@@ -61,6 +63,8 @@ export function CreateProductDialog({
             setTypeId('');
             setCategoryId('');
             setBrandId('');
+            setShortDescription('');
+            setDescription('');
             setImage('');
             setGallery([]);
             setSelectedTagIds([]);
@@ -219,6 +223,24 @@ export function CreateProductDialog({
                                 )}
                             </div>
                         </div>
+                        <div className="space-y-2">
+                            <Label>Short Description</Label>
+                            <textarea
+                                className="flex min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                                value={shortDescription}
+                                onChange={(e) => setShortDescription(e.target.value)}
+                                placeholder="Brief summary shown on product card and detail page..."
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Description</Label>
+                            <textarea
+                                className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                placeholder="Full product description shown in the Description tab..."
+                            />
+                        </div>
                     </div>
                 ),
             },
@@ -312,6 +334,8 @@ export function CreateProductDialog({
             brandId,
             name,
             sku,
+            shortDescription,
+            description,
             price,
             stock,
             isActive,
@@ -337,6 +361,8 @@ export function CreateProductDialog({
                 brand_id: brandId === '' ? null : brandId,
                 name,
                 sku,
+                short_description: shortDescription.trim() || null,
+                description: description.trim() || null,
                 price: Number(price),
                 stock: Number(stock),
                 is_active: isActive,

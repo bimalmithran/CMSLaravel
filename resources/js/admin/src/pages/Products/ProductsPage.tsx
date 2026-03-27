@@ -202,6 +202,15 @@ export function ProductsPage() {
     const columns = useMemo<ColumnDef<Product>[]>(
         () => [
             {
+                id: 'index',
+                header: '#',
+                enableHiding: false,
+                cell: ({ row, table }) => {
+                    const meta = table.options.meta as { currentPage: number };
+                    return (meta.currentPage - 1) * 10 + row.index + 1;
+                },
+            },
+            {
                 id: 'image',
                 header: 'Image',
                 cell: ({ row }) =>
@@ -233,11 +242,14 @@ export function ProductsPage() {
             {
                 id: 'type',
                 header: 'Type',
-                cell: ({ row }) => (
-                    <span className="rounded-full bg-muted px-2 py-1 text-xs">
-                        {row.original.productType?.name}
-                    </span>
-                ),
+                cell: ({ row }) => {
+                    const typeName = (row.original.product_type ?? row.original.productType)?.name;
+                    return typeName ? (
+                        <span className="rounded-full bg-muted px-2 py-1 text-xs">
+                            {typeName}
+                        </span>
+                    ) : null;
+                },
             },
             {
                 id: 'price',

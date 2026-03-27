@@ -32,6 +32,7 @@ class UpdateMenuRequest extends FormRequest
                 Rule::exists('menus', 'id')->where('menu_type', Menu::TYPE_DROPDOWN),
                 Rule::notIn([(int) $id]),
             ],
+            'placement' => ['nullable', Rule::in([Menu::PLACEMENT_HEADER, Menu::PLACEMENT_FOOTER])],
         ];
     }
 

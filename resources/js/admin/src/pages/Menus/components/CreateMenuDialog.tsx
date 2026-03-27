@@ -20,6 +20,7 @@ export function CreateMenuDialog({
         is_active: boolean;
         position: number;
         parent_id: number | null;
+        placement: 'header' | 'footer';
     }) => Promise<void>;
     parents: MenuItem[];
     pages: PageListItem[];
@@ -34,6 +35,7 @@ export function CreateMenuDialog({
     const [parentId, setParentId] = useState<number | ''>('');
     const [position, setPosition] = useState<number>(0);
     const [isActive, setIsActive] = useState(true);
+    const [placement, setPlacement] = useState<'header' | 'footer'>('header');
     const [saving, setSaving] = useState(false);
     const [err, setErr] = useState<string | null>(null);
 
@@ -50,6 +52,7 @@ export function CreateMenuDialog({
                 parent_id: parentId === '' ? null : parentId,
                 position,
                 is_active: isActive,
+                placement,
             });
             setOpen(false);
             setName('');
@@ -59,6 +62,7 @@ export function CreateMenuDialog({
             setParentId('');
             setPosition(0);
             setIsActive(true);
+            setPlacement('header');
         } catch (e) {
             setErr(e instanceof Error ? e.message : 'Create failed');
         } finally {
@@ -158,6 +162,18 @@ export function CreateMenuDialog({
                                 {p.name}
                             </option>
                             ))}
+                    </select>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="menu-placement">Placement</Label>
+                    <select
+                        id="menu-placement"
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                        value={placement}
+                        onChange={(e) => setPlacement(e.target.value as 'header' | 'footer')}
+                    >
+                        <option value="header">Header</option>
+                        <option value="footer">Footer</option>
                     </select>
                 </div>
                 <div className="grid grid-cols-2 gap-3">

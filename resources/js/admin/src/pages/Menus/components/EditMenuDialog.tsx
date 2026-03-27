@@ -28,6 +28,7 @@ export function EditMenuDialog({
             parent_id?: number | null;
             position?: number;
             is_active?: boolean;
+            placement?: 'header' | 'footer';
         },
     ) => Promise<void>;
 }) {
@@ -42,6 +43,7 @@ export function EditMenuDialog({
     );
     const [position, setPosition] = useState<number>(menu.position);
     const [isActive, setIsActive] = useState(menu.is_active);
+    const [placement, setPlacement] = useState<'header' | 'footer'>(menu.placement ?? 'header');
     const [saving, setSaving] = useState(false);
     const [err, setErr] = useState<string | null>(null);
 
@@ -53,6 +55,7 @@ export function EditMenuDialog({
         setParentId(menu.parent_id === null ? '' : menu.parent_id);
         setPosition(menu.position);
         setIsActive(menu.is_active);
+        setPlacement(menu.placement ?? 'header');
         setErr(null);
     }, [menu]);
 
@@ -69,6 +72,7 @@ export function EditMenuDialog({
                 parent_id: parentId === '' ? null : parentId,
                 position,
                 is_active: isActive,
+                placement,
             });
             onOpenChange(false);
         } catch (e) {
@@ -166,6 +170,18 @@ export function EditMenuDialog({
                                 {p.name}
                             </option>
                             ))}
+                    </select>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="edit-placement">Placement</Label>
+                    <select
+                        id="edit-placement"
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                        value={placement}
+                        onChange={(e) => setPlacement(e.target.value as 'header' | 'footer')}
+                    >
+                        <option value="header">Header</option>
+                        <option value="footer">Footer</option>
                     </select>
                 </div>
                 <div className="grid grid-cols-2 gap-3">

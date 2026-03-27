@@ -15,6 +15,7 @@ export type MenuItem = {
     position: number;
     parent_id: number | null;
     parent: MenuItem | null;
+    placement: 'header' | 'footer';
 };
 
 export type PageListItem = {
