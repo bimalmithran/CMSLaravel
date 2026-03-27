@@ -96,6 +96,16 @@ class Product extends Model
         return $this->hasMany(Review::class);
     }
 
+    public function isInStock(): bool
+    {
+        return $this->is_active && $this->stock > 0;
+    }
+
+    public function getEffectivePriceAttribute(): float
+    {
+        return (float) ($this->discount_price ?: $this->price);
+    }
+
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
