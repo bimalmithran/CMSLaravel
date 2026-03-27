@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             PageSeeder::class,
             StoreHighlightSeeder::class,
             BannerPlacementSeeder::class,
+            FooterMenuSeeder::class,
         ]);
     }
 }

@@ -83,6 +83,7 @@ class ProductController extends Controller
         $product = Product::with([
                 'reviews' => fn ($q) => $q->where('is_approved', true),
                 'tags',
+                'brand',
             ])
             ->active()
             ->findOrFail($id);

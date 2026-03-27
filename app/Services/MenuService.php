@@ -74,11 +74,12 @@ class MenuService
         $menu->delete();
     }
 
-    public function getActiveMenuTreeForStorefront(): Collection
+    public function getActiveMenuTreeForStorefront(?string $placement = null): Collection
     {
         $menus = Menu::query()
             ->whereNull('parent_id')
             ->where('is_active', true)
+            ->when($placement !== null, fn ($q) => $q->where('placement', $placement))
             ->with([
                 'page:id,title,slug,is_active',
                 'childrenRecursive' => fn($query) => $query

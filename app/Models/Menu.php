@@ -13,6 +13,9 @@ class Menu extends Model
     public const TYPE_DROPDOWN = 'dropdown';
     public const TYPE_PRODUCT_LISTING = 'product_listing';
 
+    public const PLACEMENT_HEADER = 'header';
+    public const PLACEMENT_FOOTER = 'footer';
+
     protected $fillable = [
         'name',
         'slug',
@@ -20,6 +23,7 @@ class Menu extends Model
         'menu_type',
         'page_id',
         'is_active',
+        'placement',
         'position',
         'parent_id',
     ];

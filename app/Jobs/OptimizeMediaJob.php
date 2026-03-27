@@ -9,6 +9,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 
@@ -44,14 +45,28 @@ class OptimizeMediaJob implements ShouldQueue
             $newRelativePath = str_replace(Storage::disk('public')->path(''), '', $result['path']);
             $newRelativePath = ltrim($newRelativePath, '/');
 
+            $oldStorageUrl = $media->path;
+            $newStorageUrl = Storage::url($newRelativePath);
+
             // Update the database with the new WebP details
             $media->update([
-                'path' => Storage::url($newRelativePath),
+                'path' => $newStorageUrl,
                 'size' => $result['size'],
                 'mime_type' => $result['mime_type'],
                 // Update the display name to show it's a webp now
-                'file_name' => preg_replace('/\.[^.]+$/', '.webp', $media->file_name) 
+                'file_name' => preg_replace('/\.[^.]+$/', '.webp', $media->file_name)
             ]);
+
+            // Cascade the path change to every table that may store a raw image URL,
+            // so modules that already referenced the old path are not left broken.
+            if ($oldStorageUrl !== $newStorageUrl) {
+                DB::table('banners')->where('image_path', $oldStorageUrl)->update(['image_path' => $newStorageUrl]);
+                DB::table('testimonials')->where('image_path', $oldStorageUrl)->update(['image_path' => $newStorageUrl]);
+                DB::table('brands')->where('logo', $oldStorageUrl)->update(['logo' => $newStorageUrl]);
+                DB::table('store_highlights')->where('icon', $oldStorageUrl)->update(['icon' => $newStorageUrl]);
+                DB::table('products')->where('image', $oldStorageUrl)->update(['image' => $newStorageUrl]);
+                DB::table('categories')->where('image', $oldStorageUrl)->update(['image' => $newStorageUrl]);
+            }
 
             // Delete the original, heavy file to free up server space
             if ($absolutePath !== $result['path']) {

@@ -32,6 +32,7 @@ use App\Http\Controllers\Api\TestimonialController;
 use App\Http\Controllers\Api\PageController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\StoreHighlightController;
+use App\Http\Controllers\Api\NewsletterController;
 use App\Http\Controllers\Api\WishlistController;
 use Illuminate\Support\Facades\Route;
 
@@ -72,6 +73,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/banners', [BannerController::class, 'byPlacement']);
         Route::get('/store-highlights', [StoreHighlightController::class, 'index']);
         Route::get('/settings/global', [SettingController::class, 'global']);
+        Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe']);
     });
 
     // Customer auth (token-based)

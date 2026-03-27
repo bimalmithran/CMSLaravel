@@ -16,9 +16,10 @@ class SettingSeeder extends Seeder
         $settings = [
             // General Group
             ['key' => 'site_name', 'value' => 'My Awesome Store', 'type' => 'text', 'group' => 'general'],
+            ['key' => 'site_description', 'value' => 'We are a team of designers and developers that create high quality products.', 'type' => 'textarea', 'group' => 'general'],
             ['key' => 'site_logo', 'value' => null, 'type' => 'image', 'group' => 'general'],
             ['key' => 'site_favicon', 'value' => null, 'type' => 'image', 'group' => 'general'],
-            
+
             // Contact Group
             ['key' => 'contact_email', 'value' => 'info@example.com', 'type' => 'text', 'group' => 'contact'],
             ['key' => 'contact_phone', 'value' => '+1 234 567 8900', 'type' => 'text', 'group' => 'contact'],
@@ -27,6 +28,7 @@ class SettingSeeder extends Seeder
             // Social Group
             ['key' => 'social_facebook', 'value' => 'https://facebook.com', 'type' => 'text', 'group' => 'social'],
             ['key' => 'social_instagram', 'value' => 'https://instagram.com', 'type' => 'text', 'group' => 'social'],
+            ['key' => 'social_twitter', 'value' => null, 'type' => 'text', 'group' => 'social'],
 
             // Store Group
             ['key' => 'store_tax_id', 'value' => null, 'type' => 'text', 'group' => 'store'],

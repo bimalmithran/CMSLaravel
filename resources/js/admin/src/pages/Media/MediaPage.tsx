@@ -64,26 +64,41 @@ export function MediaPage() {
         void loadMedia(1, search);
     };
 
+    const [uploadProgress, setUploadProgress] = useState('');
+
     async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
-        if (!e.target.files?.[0]) return;
+        const files = Array.from(e.target.files ?? []);
+        if (files.length === 0) return;
 
         setIsUploading(true);
-        const formData = new FormData();
-        formData.append('file', e.target.files[0]);
-
         try {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const res = await apiFetch<any>('/api/v1/admin/media', {
-                method: 'POST',
-                body: formData,
-            });
+            for (let i = 0; i < files.length; i++) {
+                setUploadProgress(
+                    files.length > 1
+                        ? `Uploading file ${i + 1} of ${files.length}...`
+                        : 'Uploading and compressing image...',
+                );
 
-            if (!res.success) {
-                if (res.errors) {
-                    const detailedErrors = Object.values(res.errors).flat();
-                    throw new Error(detailedErrors.join('\n'));
+                const formData = new FormData();
+                formData.append('file', files[i]);
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const res = await apiFetch<any>('/api/v1/admin/media', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!res.success) {
+                    if (res.errors) {
+                        const detailedErrors = Object.values(res.errors).flat();
+                        throw new Error(
+                            `${files[i].name}: ${detailedErrors.join('\n')}`,
+                        );
+                    }
+                    throw new Error(
+                        `${files[i].name}: ${res.message ?? 'Upload failed'}`,
+                    );
                 }
-                throw new Error(res.message || 'Upload failed');
             }
 
             await loadMedia(1);
@@ -96,6 +111,7 @@ export function MediaPage() {
             );
         } finally {
             setIsUploading(false);
+            setUploadProgress('');
             e.target.value = '';
         }
     }
@@ -272,6 +288,7 @@ export function MediaPage() {
                                     id="upload"
                                     type="file"
                                     className="hidden"
+                                    multiple
                                     onChange={handleUpload}
                                     accept="image/*,.pdf,.doc,.docx"
                                 />
@@ -402,7 +419,7 @@ export function MediaPage() {
 
             <FullScreenLoader
                 open={isUploading}
-                text="Uploading and compressing image..."
+                text={uploadProgress || 'Uploading and compressing image...'}
             />
             <FullScreenLoader open={isUpdating} text="Saving changes..." />
             <FullScreenLoader open={isDeleting} text="Deleting files..." />

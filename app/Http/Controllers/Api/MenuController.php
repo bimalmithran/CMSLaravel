@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Menu;
 use App\Services\MenuService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class MenuController extends Controller
 {
@@ -12,9 +14,14 @@ class MenuController extends Controller
         private readonly MenuService $menuService
     ) {}
 
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $menus = $this->menuService->getActiveMenuTreeForStorefront();
+        $placement = $request->query('placement');
+
+        $allowed = [Menu::PLACEMENT_HEADER, Menu::PLACEMENT_FOOTER];
+        $resolvedPlacement = in_array($placement, $allowed, true) ? $placement : null;
+
+        $menus = $this->menuService->getActiveMenuTreeForStorefront($resolvedPlacement);
 
         return response()->json([
             'success' => true,
