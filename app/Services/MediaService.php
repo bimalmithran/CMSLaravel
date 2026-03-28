@@ -30,7 +30,7 @@ class MediaService
         // 2. Create the database record
         $media = Media::create([
             'file_name' => $file->getClientOriginalName(),
-            'path' => Storage::url($path),
+            'path' => '/storage/' . ltrim($path, '/'),
             'mime_type' => $file->getMimeType(),
             'size' => $file->getSize(),
         ]);

@@ -46,7 +46,7 @@ class OptimizeMediaJob implements ShouldQueue
             $newRelativePath = ltrim($newRelativePath, '/');
 
             $oldStorageUrl = $media->path;
-            $newStorageUrl = Storage::url($newRelativePath);
+            $newStorageUrl = '/storage/' . ltrim($newRelativePath, '/');
 
             // Update the database with the new WebP details
             $media->update([

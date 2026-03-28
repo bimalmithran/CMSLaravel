@@ -23,7 +23,7 @@ class StorefrontBannerResource extends JsonResource
             'button_text' => $this->button_text,
             'action_url' => $this->action_url,
             'placement' => $this->placement,
-            'image_url' => $this->image_path ? asset($this->image_path) : null,
+            'image_url' => $this->image_path ?: null,
         ];
     }
 }
