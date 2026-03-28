@@ -6,6 +6,7 @@ import {
     LayoutDashboard,
     List,
     LogOut,
+    Mail,
     MessageSquare,
     Moon,
     Package,
@@ -169,6 +170,8 @@ export function AdminLayout() {
         { to: '/store-highlights', label: 'Store Highlights', icon: Star },
         { to: '/testimonials', label: 'Testimonials', icon: MessageSquare },
         { to: '/faqs', label: 'FAQs', icon: CircleHelp },
+        { to: '/reviews', label: 'Reviews', icon: Star },
+        { to: '/contact-inquiries', label: 'Contact Inquiries', icon: Mail },
         { to: '/media', label: 'Media', icon: Images },
     ];
 

@@ -22,6 +22,8 @@ import { SizesPage } from './pages/Sizes/SizesPage'
 import { StoreHighlightsPage } from './pages/StoreHighlights/StoreHighlightsPage'
 import { TagsPage } from './pages/Tags/TagsPage'
 import { TestimonialsPage } from './pages/Testimonials/TestimonialsPage'
+import { ReviewsPage } from './pages/Reviews/ReviewsPage'
+import { ContactInquiriesPage } from './pages/ContactInquiries/ContactInquiriesPage'
 
 export function AdminApp() {
   return (
@@ -49,6 +51,8 @@ export function AdminApp() {
             <Route path="/customers" element={<CustomersPage />} />
             <Route path="/media" element={<MediaPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/reviews" element={<ReviewsPage />} />
+            <Route path="/contact-inquiries" element={<ContactInquiriesPage />} />
           </Route>
         </Route>
 
