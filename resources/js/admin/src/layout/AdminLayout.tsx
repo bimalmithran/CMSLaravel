@@ -18,6 +18,7 @@ import {
     Star,
     Sun,
     Tags,
+    Boxes,
     UserCog,
     Users,
 } from 'lucide-react';
@@ -180,6 +181,7 @@ export function AdminLayout() {
         { to: '/brands', label: 'Brands', icon: Square },
         { to: '/tags', label: 'Tags', icon: Tags },
         { to: '/banners', label: 'Banners', icon: Images },
+        { to: '/product-types', label: 'Product Types', icon: Boxes },
         { to: '/sizes', label: 'Sizes', icon: Ruler },
         { to: '/products', label: 'Products', icon: Package },
         { to: '/orders', label: 'Orders', icon: ShoppingCart },

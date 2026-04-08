@@ -135,8 +135,9 @@ Route::prefix('v1')->group(function () {
             // Sizes
             Route::apiResource('sizes', AdminSizeController::class);
 
-            // Product Types (Read-only for the dropdowns)
-            Route::get('product-types/list', [AdminProductTypeController::class, 'index']);
+            // Product Types
+            Route::get('product-types/list', [AdminProductTypeController::class, 'list']);
+            Route::apiResource('product-types', AdminProductTypeController::class);
 
             // Admin catalog CRUD
             Route::get('/categories/list', [AdminCategoryController::class, 'list']);

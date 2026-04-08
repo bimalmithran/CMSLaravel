@@ -17,6 +17,7 @@ import { MenusPage } from './pages/Menus/MenusPage'
 import { OrdersPage } from './pages/Orders/OrdersPage'
 import { PagesPage } from './pages/Pages/PagesPage'
 import { ProductsPage } from './pages/Products/ProductsPage'
+import { ProductTypesPage } from './pages/ProductTypes/ProductTypesPage'
 import { SettingsPage } from './pages/Settings/SettingsPage'
 import { SizesPage } from './pages/Sizes/SizesPage'
 import { StoreHighlightsPage } from './pages/StoreHighlights/StoreHighlightsPage'
@@ -40,6 +41,7 @@ export function AdminApp() {
             <Route path="/tags" element={<TagsPage />} />
             <Route path="/banners" element={<BannersPage />} />
             <Route path="/sizes" element={<SizesPage />} />
+            <Route path="/product-types" element={<ProductTypesPage />} />
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/pages" element={<PagesPage />} />
             <Route path="/content-blocks" element={<ContentBlocksPage />} />
