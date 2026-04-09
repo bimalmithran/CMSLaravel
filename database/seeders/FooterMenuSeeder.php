@@ -36,6 +36,15 @@ class FooterMenuSeeder extends Seeder
             'Discount',
             'Policy Shipping',
         ]);
+
+        $this->seedMenu('footer-policies', 'OUR POLICIES', [
+            'Terms And Condition',
+            'Buyback Policies',
+            'Cancellation Policies',
+            'Refund Policies',
+            'Privacy Policy',
+            'Shipping Policy',
+        ]);
     }
 
     /**
