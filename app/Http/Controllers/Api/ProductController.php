@@ -96,6 +96,25 @@ class ProductController extends Controller
         ]);
     }
 
+    public function showBySlug(string $slug): JsonResponse
+    {
+        $product = Product::with([
+                'reviews' => fn ($q) => $q->where('is_approved', true)->with('customer'),
+                'tags',
+                'brand',
+            ])
+            ->active()
+            ->where('slug', $slug)
+            ->firstOrFail();
+
+        $product->increment('views');
+
+        return response()->json([
+            'success' => true,
+            'data' => $product,
+        ]);
+    }
+
     public function featured(Request $request): JsonResponse
     {
         $limit = (int) $request->input('limit', 10);
