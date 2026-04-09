@@ -16,6 +16,7 @@ class UpdateMediaRequest extends FormRequest
         return [
             'file_name' => ['nullable', 'string', 'max:255'],
             'alt_text'  => ['nullable', 'string', 'max:255'],
+            'collection_name' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

@@ -12,6 +12,7 @@ class Media extends Model
         'path',
         'mime_type',
         'size',
-        'alt_text'
+        'alt_text',
+        'collection_name'
     ];
 }

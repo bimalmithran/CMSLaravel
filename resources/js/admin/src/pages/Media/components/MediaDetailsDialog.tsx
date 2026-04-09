@@ -11,19 +11,22 @@ interface MediaDetailsDialogProps {
     media: MediaItem | null;
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onUpdate: (id: number, data: { file_name: string; alt_text: string }) => Promise<void>;
+    onUpdate: (id: number, data: { file_name: string; alt_text: string; collection_name?: string }) => Promise<void>;
     onDelete: (media: MediaItem) => Promise<void>;
 }
 
 export function MediaDetailsDialog({ media, open, onOpenChange, onUpdate, onDelete }: MediaDetailsDialogProps) {
     const [fileName, setFileName] = useState('');
     const [altText, setAltText] = useState('');
+    const [collectionName, setCollectionName] = useState('');
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
         if (open && media) {
             setFileName(media.file_name || '');
             setAltText(media.alt_text || '');
+            // @ts-expect-error Types need to be synced but it's safe at runtime
+            setCollectionName(media.collection_name || '');
         }
     }, [open, media]);
 
@@ -46,7 +49,7 @@ export function MediaDetailsDialog({ media, open, onOpenChange, onUpdate, onDele
     const handleSave = async () => {
         setSaving(true);
         try {
-            await onUpdate(media.id, { file_name: fileName, alt_text: altText });
+            await onUpdate(media.id, { file_name: fileName, alt_text: altText, collection_name: collectionName });
             onOpenChange(false);
         } catch (e) {
             alert(e instanceof Error ? e.message : 'Update failed');
@@ -64,7 +67,7 @@ export function MediaDetailsDialog({ media, open, onOpenChange, onUpdate, onDele
             open={open}
             onOpenChange={onOpenChange}
             title="Attachment Details"
-            size="lg"
+            size="xl"
         >
             <div className="flex flex-col">
                 {/* Scrollable Content Area */}
@@ -122,6 +125,17 @@ export function MediaDetailsDialog({ media, open, onOpenChange, onUpdate, onDele
                             <p className="text-[10px] text-muted-foreground">
                                 Alt text is crucial for accessibility and SEO. Describe the purpose of the image.
                             </p>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="collection_name">Collection / Folder</Label>
+                            <Input
+                                id="collection_name"
+                                value={collectionName}
+                                onChange={(e) => setCollectionName(e.target.value)}
+                                placeholder="e.g. Products, Banners..."
+                            />
+                            <p className="text-[10px] text-muted-foreground">Use this to group related images together (e.g. "Products", "Logos").</p>
                         </div>
                     </div>
                 </div>

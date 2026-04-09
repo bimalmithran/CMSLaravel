@@ -1,5 +1,8 @@
-import { Image as ImageIcon, Loader2, Upload, X } from 'lucide-react';
-import React, { useState } from 'react';
+import { Image as ImageIcon, Loader2, Upload, X, ChevronDown, ChevronUp } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../../components/ui/collapsible';
+import { MediaFilters, MediaFilterState } from '../pages/Media/components/MediaFilters';
 
 import { Button } from '../../../components/ui/button';
 import {
@@ -42,24 +45,57 @@ export function MediaPicker({ value, onSelect, onSelectMedia }: MediaPickerProps
     const [page, setPage] = useState(1);
     const [lastPage, setLastPage] = useState(1);
 
-    function loadMedia(targetPage: number = 1) {
+    const observerTarget = useRef<HTMLDivElement>(null);
+
+    const [filters, setFilters] = useState<MediaFilterState>({
+        search: '', type: 'all', date: 'all', collection_name: '', sort_by: 'created_at', sort_dir: 'desc'
+    });
+    const [filtersOpen, setFiltersOpen] = useState(false);
+
+    const loadMedia = useCallback((targetPage: number = 1, currentFilters = filters, append: boolean = false) => {
         setLoading(true);
-        apiFetch<Paginated<MediaItem>>(`/api/v1/admin/media?page=${targetPage}`)
+        const params = new URLSearchParams({ page: String(targetPage) });
+        if (currentFilters.search) params.append('search', currentFilters.search);
+        if (currentFilters.type && currentFilters.type !== 'all') params.append('type', currentFilters.type);
+        if (currentFilters.date && currentFilters.date !== 'all') params.append('date', currentFilters.date);
+        if (currentFilters.collection_name) params.append('collection_name', currentFilters.collection_name);
+        if (currentFilters.sort_by) params.append('sort_by', currentFilters.sort_by);
+        if (currentFilters.sort_dir) params.append('sort_dir', currentFilters.sort_dir);
+
+        apiFetch<Paginated<MediaItem>>(`/api/v1/admin/media?${params.toString()}`)
             .then((res) => {
                 if (res.success) {
-                    setMedia(res.data.data);
+                    setMedia(prev => append ? [...prev, ...res.data.data] : res.data.data);
                     setPage(res.data.current_page);
                     setLastPage(res.data.last_page);
                 }
             })
             .catch((err) => console.error('Failed to fetch media:', err))
             .finally(() => setLoading(false));
-    }
+    }, []);
+
+    // Intersection Observer for Infinite Scroll
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            entries => {
+                if (entries[0].isIntersecting && !loading && page < lastPage) {
+                    loadMedia(page + 1, filters, true);
+                }
+            },
+            { threshold: 0.5 }
+        );
+
+        if (observerTarget.current) {
+            observer.observe(observerTarget.current);
+        }
+
+        return () => observer.disconnect();
+    }, [loading, page, lastPage, loadMedia, filters]);
 
     function handleOpenChange(isOpen: boolean) {
         setOpen(isOpen);
-        if (isOpen) {
-            loadMedia(1); // Load first page when opened
+        if (isOpen && media.length === 0) {
+            loadMedia(1, filters, false); // Load first page when opened
         }
     }
 
@@ -111,12 +147,12 @@ export function MediaPicker({ value, onSelect, onSelectMedia }: MediaPickerProps
                         </Button>
                     </DialogTrigger>
                     
-                    <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
+                    <DialogContent className="max-w-[1400px] sm:max-w-[1400px] w-[95vw] max-h-[95vh] flex flex-col">
                         <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-2 border-b">
                             <DialogTitle>Select Media</DialogTitle>
                             
                             {/* INLINE UPLOAD BUTTON */}
-                            <Label htmlFor="picker-upload" className="cursor-pointer m-0">
+                            <Label htmlFor="picker-upload" className="cursor-pointer m-0 mr-8">
                                 <div className="bg-primary text-primary-foreground hover:bg-primary/90 px-3 py-1.5 rounded-md flex items-center gap-2 text-sm font-medium transition-colors">
                                     {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                                     {uploading ? 'Uploading...' : 'Upload New'}
@@ -132,8 +168,27 @@ export function MediaPicker({ value, onSelect, onSelectMedia }: MediaPickerProps
                             </Label>
                         </DialogHeader>
 
+                        {/* FILTERS ACCORDION */}
+                        <div className="px-6 pb-2 border-b bg-muted/10">
+                            <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
+                                <CollapsibleTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="w-full flex justify-between h-8 text-xs text-muted-foreground p-0 hover:bg-transparent">
+                                        <span>Advanced Filters {(filters.search || filters.collection_name || filters.type !== 'all' || filters.date !== 'all') ? <span className="text-primary font-medium ml-1">(Active)</span> : ''}</span>
+                                        {filtersOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                    </Button>
+                                </CollapsibleTrigger>
+                                <CollapsibleContent className="pt-2 pb-3">
+                                    <MediaFilters 
+                                        filters={filters} 
+                                        onChange={(f) => { setFilters(f); loadMedia(1, f, false); }} 
+                                        compact 
+                                    />
+                                </CollapsibleContent>
+                            </Collapsible>
+                        </div>
+
                         {/* SCROLLABLE GRID AREA */}
-                        <div className="flex-1 overflow-y-auto py-4 min-h-[300px]">
+                        <div className="flex-1 overflow-y-auto px-6 py-4 min-h-[400px]">
                             {loading ? (
                                 <div className="text-sm text-muted-foreground flex justify-center items-center h-full">Loading media...</div>
                             ) : media.length === 0 ? (
@@ -141,21 +196,21 @@ export function MediaPicker({ value, onSelect, onSelectMedia }: MediaPickerProps
                                     No media found. Upload an image to get started.
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                                <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
                                     {media.map((item) => (
                                         <div
                                             key={item.id}
                                             onClick={() => handleSelect({ id: item.id, path: item.path })}
-                                            className="group relative aspect-square rounded-md border cursor-pointer overflow-hidden hover:ring-2 hover:ring-primary transition-all bg-muted/50"
+                                            className="group relative rounded-md border cursor-pointer overflow-hidden hover:ring-4 hover:ring-primary/50 transition-all bg-muted/50 break-inside-avoid"
                                         >
                                             {item.mime_type.startsWith('image/') ? (
                                                 <img
                                                     src={item.path}
                                                     alt={item.file_name}
-                                                    className="w-full h-full object-cover"
+                                                    className="w-full h-auto object-cover transition-transform group-hover:scale-[1.02]"
                                                 />
                                             ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-xs p-2 text-center break-all">
+                                                <div className="w-full h-32 flex items-center justify-center text-xs p-2 text-center break-all">
                                                     {item.file_name}
                                                 </div>
                                             )}
@@ -163,32 +218,14 @@ export function MediaPicker({ value, onSelect, onSelectMedia }: MediaPickerProps
                                     ))}
                                 </div>
                             )}
-                        </div>
 
-                        {/* PAGINATION CONTROLS */}
-                        {lastPage > 1 && (
-                            <div className="flex items-center justify-between pt-4 border-t mt-auto">
-                                <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    disabled={page === 1 || loading}
-                                    onClick={() => loadMedia(page - 1)}
-                                >
-                                    Previous
-                                </Button>
-                                <span className="text-sm text-muted-foreground">
-                                    Page {page} of {lastPage}
-                                </span>
-                                <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    disabled={page === lastPage || loading}
-                                    onClick={() => loadMedia(page + 1)}
-                                >
-                                    Next
-                                </Button>
-                            </div>
-                        )}
+                            {/* INFINITE SCROLL TARGET */}
+                            {(loading || page < lastPage) && media.length > 0 && (
+                                <div ref={observerTarget} className="py-4 text-center text-sm text-muted-foreground flex items-center justify-center">
+                                    <Loader2 className="w-4 h-4 animate-spin mr-2" /> Loading more media...
+                                </div>
+                            )}
+                        </div>
                     </DialogContent>
                 </Dialog>
 

@@ -18,7 +18,7 @@ class MediaController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $media = $this->mediaService->getPaginatedMedia(24, $request->query('search'));
+        $media = $this->mediaService->getPaginatedMedia(24, $request->query());
 
         return response()->json([
             'success' => true,

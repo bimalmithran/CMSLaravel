@@ -10,16 +10,53 @@ use App\Jobs\OptimizeMediaJob;
 
 class MediaService
 {
-    public function getPaginatedMedia(int $perPage = 24, ?string $search = null): LengthAwarePaginator
+    public function getPaginatedMedia(int $perPage = 24, array $filters = []): LengthAwarePaginator
     {
         $query = Media::query();
 
-        if ($search) {
-            $query->where('file_name', 'like', "%{$search}%")
-                ->orWhere('alt_text', 'like', "%{$search}%");
+        if (!empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function($q) use ($search) {
+                $q->where('file_name', 'like', "%{$search}%")
+                  ->orWhere('alt_text', 'like', "%{$search}%");
+            });
         }
 
-        return $query->orderBy('created_at', 'desc')->paginate($perPage);
+        if (!empty($filters['type'])) {
+            if ($filters['type'] === 'image') {
+                $query->where('mime_type', 'like', 'image/%');
+            } elseif ($filters['type'] === 'document') {
+                $query->where('mime_type', 'not like', 'image/%');
+            }
+        }
+
+        if (!empty($filters['collection_name'])) {
+            $query->where('collection_name', $filters['collection_name']);
+        }
+
+        if (!empty($filters['date'])) {
+            $date = $filters['date'];
+            if ($date === 'today') {
+                $query->whereDate('created_at', today());
+            } elseif ($date === 'last_7_days') {
+                $query->where('created_at', '>=', now()->subDays(7));
+            } elseif ($date === 'this_month') {
+                $query->whereMonth('created_at', now()->month)
+                      ->whereYear('created_at', now()->year);
+            }
+        }
+
+        $sortBy = $filters['sort_by'] ?? 'created_at';
+        $sortDir = $filters['sort_dir'] ?? 'desc';
+        
+        $allowedSorts = ['created_at', 'size', 'file_name'];
+        if (in_array($sortBy, $allowedSorts)) {
+            $query->orderBy($sortBy, $sortDir === 'asc' ? 'asc' : 'desc');
+        } else {
+            $query->orderBy('created_at', 'desc');
+        }
+
+        return $query->paginate($perPage);
     }
 
     public function uploadMedia(UploadedFile $file): Media
@@ -47,11 +84,16 @@ class MediaService
     {
         $media = Media::findOrFail($id);
 
-        // Only allow updating safe text fields
-        $media->update([
+        $updateData = [
             'file_name' => $data['file_name'] ?? $media->file_name,
             'alt_text' => $data['alt_text'] ?? $media->alt_text,
-        ]);
+        ];
+
+        if (array_key_exists('collection_name', $data)) {
+            $updateData['collection_name'] = $data['collection_name'];
+        }
+
+        $media->update($updateData);
 
         return $media;
     }

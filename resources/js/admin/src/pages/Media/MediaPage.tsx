@@ -1,5 +1,5 @@
-import { FileIcon, Search, Trash2, Upload, CheckSquare, X } from 'lucide-react';
-import React, { useCallback, useEffect, useState } from 'react';
+import { FileIcon, Search, Trash2, Upload, CheckSquare, X, Loader2 } from 'lucide-react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 
 import { Button } from '../../../../components/ui/button';
 import { Card, CardContent } from '../../../../components/ui/card';
@@ -10,6 +10,7 @@ import { FullScreenLoader } from '../../components/ui/FullScreenLoader';
 import { apiFetch } from '../../lib/api';
 import type { MediaItem, PaginatedResponse } from '../../types/media';
 import { MediaDetailsDialog } from './components/MediaDetailsDialog';
+import { MediaFilters, MediaFilterState } from './components/MediaFilters';
 
 export function MediaPage() {
     // Data & Pagination State
@@ -17,7 +18,14 @@ export function MediaPage() {
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [lastPage, setLastPage] = useState(1);
-    const [search, setSearch] = useState('');
+    const [filters, setFilters] = useState<MediaFilterState>({
+        search: '',
+        type: 'all',
+        date: 'all',
+        collection_name: '',
+        sort_by: 'created_at',
+        sort_dir: 'desc',
+    });
 
     // Action State
     const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
@@ -29,20 +37,28 @@ export function MediaPage() {
     const [isSelectionMode, setIsSelectionMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
+    const observerTarget = useRef<HTMLDivElement>(null);
+
     const loadMedia = useCallback(
-        async (targetPage = 1, searchQuery = search) => {
+        async (targetPage = 1, currentFilters = filters, append = false) => {
             setLoading(true);
             try {
                 const params = new URLSearchParams({
                     page: String(targetPage),
                 });
-                if (searchQuery) params.append('search', searchQuery);
+                
+                if (currentFilters.search) params.append('search', currentFilters.search);
+                if (currentFilters.type && currentFilters.type !== 'all') params.append('type', currentFilters.type);
+                if (currentFilters.date && currentFilters.date !== 'all') params.append('date', currentFilters.date);
+                if (currentFilters.collection_name) params.append('collection_name', currentFilters.collection_name);
+                if (currentFilters.sort_by) params.append('sort_by', currentFilters.sort_by);
+                if (currentFilters.sort_dir) params.append('sort_dir', currentFilters.sort_dir);
 
                 const res = await apiFetch<PaginatedResponse<MediaItem>>(
                     `/api/v1/admin/media?${params.toString()}`,
                 );
                 if (res.success) {
-                    setMedia(res.data.data);
+                    setMedia((prev) => append ? [...prev, ...res.data.data] : res.data.data);
                     setPage(res.data.current_page);
                     setLastPage(res.data.last_page);
                 }
@@ -52,16 +68,35 @@ export function MediaPage() {
                 setLoading(false);
             }
         },
-        [search],
+        [filters],
     );
 
     useEffect(() => {
         void loadMedia();
     }, [loadMedia]);
 
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        void loadMedia(1, search);
+    // Intersection Observer for Infinite Scroll
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            entries => {
+                if (entries[0].isIntersecting && !loading && page < lastPage) {
+                    void loadMedia(page + 1, filters, true);
+                }
+            },
+            { threshold: 0.5 }
+        );
+
+        if (observerTarget.current) {
+            observer.observe(observerTarget.current);
+        }
+
+        return () => observer.disconnect();
+    }, [loading, page, lastPage, loadMedia, filters]);
+
+    const handleFilterChange = (newFilters: MediaFilterState) => {
+        setFilters(newFilters);
+        // Reset to page 1 and fetch with new filters
+        void loadMedia(1, newFilters, false);
     };
 
     const [uploadProgress, setUploadProgress] = useState('');
@@ -255,19 +290,6 @@ export function MediaPage() {
                         </div>
                     ) : (
                         <>
-                            <form
-                                onSubmit={handleSearch}
-                                className="relative w-full sm:w-64"
-                            >
-                                <Search className="absolute top-2.5 left-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    type="search"
-                                    placeholder="Search files..."
-                                    className="pl-8"
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                />
-                            </form>
 
                             <Button
                                 variant="outline"
@@ -298,7 +320,12 @@ export function MediaPage() {
                 </div>
             </div>
 
-            {loading ? (
+            {/* Filter Toolbar Section */}
+            {!isSelectionMode && (
+                <MediaFilters filters={filters} onChange={handleFilterChange} />
+            )}
+
+            {loading && page === 1 ? (
                 <div className="py-12 text-center text-sm text-muted-foreground">
                     Loading media...
                 </div>
@@ -312,14 +339,14 @@ export function MediaPage() {
                     </p>
                 </div>
             ) : (
-                <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">
+                <div className="columns-1 gap-4 sm:columns-2 md:columns-3 space-y-4">
                     {media.map((item) => {
                         const isSelected = selectedIds.includes(item.id);
 
                         return (
                             <Card
                                 key={item.id}
-                                className={`group relative cursor-pointer overflow-hidden transition-all ${
+                                className={`group relative mb-4 break-inside-avoid cursor-pointer overflow-hidden transition-all ${
                                     isSelected
                                         ? 'border-transparent ring-2 ring-primary'
                                         : 'border hover:border-primary/50'
@@ -332,17 +359,19 @@ export function MediaPage() {
                                     }
                                 }}
                             >
-                                <CardContent className="flex aspect-square items-center justify-center bg-muted/30 p-0">
+                                <CardContent className="flex items-center justify-center bg-muted/30 p-0">
                                     {item.mime_type.startsWith('image/') ? (
                                         <img
                                             src={item.path}
                                             alt={
                                                 item.alt_text || item.file_name
                                             }
-                                            className="h-full w-full object-contain p-1"
+                                            className="h-auto w-full object-cover transition-transform group-hover:scale-[1.02]"
                                         />
                                     ) : (
-                                        <FileIcon className="h-10 w-10 text-muted-foreground" />
+                                        <div className="flex h-32 w-full items-center justify-center">
+                                            <FileIcon className="h-10 w-10 text-muted-foreground" />
+                                        </div>
                                     )}
 
                                     {/* Selection Checkbox (Visible in Selection Mode) */}
@@ -387,25 +416,9 @@ export function MediaPage() {
                 </div>
             )}
 
-            {lastPage > 1 && (
-                <div className="mt-6 flex items-center justify-between border-t pt-4">
-                    <Button
-                        variant="outline"
-                        disabled={page === 1 || loading}
-                        onClick={() => void loadMedia(page - 1)}
-                    >
-                        Previous
-                    </Button>
-                    <span className="text-sm font-medium text-muted-foreground">
-                        Page {page} of {lastPage}
-                    </span>
-                    <Button
-                        variant="outline"
-                        disabled={page === lastPage || loading}
-                        onClick={() => void loadMedia(page + 1)}
-                    >
-                        Next
-                    </Button>
+            {(loading || page < lastPage) && media.length > 0 && (
+                <div ref={observerTarget} className="py-8 flex items-center justify-center text-sm text-muted-foreground">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading more media...
                 </div>
             )}
 

@@ -9,22 +9,21 @@ export function DiamondSpec({ specs, onChange }: SpecFormProps) {
     // Helper functions to safely extract typed values from the generic specs dictionary
     const getString = (key: string) => (specs[key] as string) || '';
     const getNumber = (key: string) => (specs[key] as number) || '';
-    const getBoolean = (key: string) => (specs[key] as boolean) || false;
 
     return (
         <div className="space-y-6">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                {/* Number Input Example */}
+                {/* Count Input Example */}
                 <div className="space-y-2">
-                    <Label>Carat Weight</Label>
+                    <Label>Diamond Count</Label>
                     <Input
                         type="number"
-                        step="0.01"
-                        placeholder="e.g., 1.50"
-                        value={getNumber('carat')}
+                        step="1"
+                        placeholder="e.g., 1"
+                        value={getNumber('diamond_count')}
                         onChange={(e) =>
                             onChange(
-                                'carat',
+                                'diamond_count',
                                 e.target.value === ''
                                     ? ''
                                     : Number(e.target.value),
@@ -35,13 +34,13 @@ export function DiamondSpec({ specs, onChange }: SpecFormProps) {
 
                 {/* Dropdown/Select Example */}
                 <div className="space-y-2">
-                    <Label>Diamond Shape</Label>
+                    <Label>Diamond Shape / Setting</Label>
                     <select
                         className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm focus-visible:ring-1 focus-visible:ring-primary"
-                        value={getString('shape')}
-                        onChange={(e) => onChange('shape', e.target.value)}
+                        value={getString('diamond_setting')}
+                        onChange={(e) => onChange('diamond_setting', e.target.value)}
                     >
-                        <option value="">Select Shape...</option>
+                        <option value="">Select...</option>
                         <option value="Round">Round</option>
                         <option value="Princess">Princess</option>
                         <option value="Cushion">Cushion</option>
@@ -49,6 +48,8 @@ export function DiamondSpec({ specs, onChange }: SpecFormProps) {
                         <option value="Oval">Oval</option>
                         <option value="Pear">Pear</option>
                         <option value="Marquise">Marquise</option>
+                        <option value="Prong">Prong</option>
+                        <option value="Bezel">Bezel</option>
                     </select>
                 </div>
 
@@ -56,8 +57,8 @@ export function DiamondSpec({ specs, onChange }: SpecFormProps) {
                     <Label>Cut Grade</Label>
                     <select
                         className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm focus-visible:ring-1 focus-visible:ring-primary"
-                        value={getString('cut')}
-                        onChange={(e) => onChange('cut', e.target.value)}
+                        value={getString('diamond_cut')}
+                        onChange={(e) => onChange('diamond_cut', e.target.value)}
                     >
                         <option value="">Select Cut...</option>
                         <option value="Ideal">Ideal</option>
@@ -73,8 +74,8 @@ export function DiamondSpec({ specs, onChange }: SpecFormProps) {
                     <Label>Color Grade</Label>
                     <select
                         className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm focus-visible:ring-1 focus-visible:ring-primary"
-                        value={getString('color')}
-                        onChange={(e) => onChange('color', e.target.value)}
+                        value={getString('diamond_color')}
+                        onChange={(e) => onChange('diamond_color', e.target.value)}
                     >
                         <option value="">Select Color...</option>
                         <option value="D">D (Colorless)</option>
@@ -91,8 +92,8 @@ export function DiamondSpec({ specs, onChange }: SpecFormProps) {
                     <Label>Clarity Grade</Label>
                     <select
                         className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm focus-visible:ring-1 focus-visible:ring-primary"
-                        value={getString('clarity')}
-                        onChange={(e) => onChange('clarity', e.target.value)}
+                        value={getString('diamond_clarity')}
+                        onChange={(e) => onChange('diamond_clarity', e.target.value)}
                     >
                         <option value="">Select Clarity...</option>
                         <option value="FL">FL (Flawless)</option>
@@ -105,36 +106,6 @@ export function DiamondSpec({ specs, onChange }: SpecFormProps) {
                         <option value="SI2">SI2</option>
                     </select>
                 </div>
-
-                {/* Standard Text Input Example */}
-                <div className="space-y-2">
-                    <Label>Certificate Number</Label>
-                    <Input
-                        type="text"
-                        placeholder="e.g., GIA-12345678"
-                        value={getString('certificate_number')}
-                        onChange={(e) =>
-                            onChange('certificate_number', e.target.value)
-                        }
-                    />
-                </div>
-            </div>
-
-            {/* Checkbox / Boolean Example */}
-            <div className="flex items-center space-x-2 pt-2">
-                <Checkbox
-                    id="is_lab_grown"
-                    checked={getBoolean('is_lab_grown')}
-                    onCheckedChange={(checked) =>
-                        onChange('is_lab_grown', !!checked)
-                    }
-                />
-                <Label
-                    htmlFor="is_lab_grown"
-                    className="cursor-pointer font-normal"
-                >
-                    This is a Lab-Grown Diamond
-                </Label>
             </div>
         </div>
     );
