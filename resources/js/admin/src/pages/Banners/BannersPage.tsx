@@ -52,7 +52,7 @@ const IMAGE_BREAKPOINTS: ImageBreakpoint[] = [
     {
         field: 'image_path',
         label: 'Desktop Image',
-        hint: 'Min 1200px wide — shown on laptops and larger screens',
+        hint: 'Min 1200px wide — shown on screens ≥1200px (laptops, desktops)',
         required: true,
         minWidth: 1200,
         maxWidth: null,
@@ -60,7 +60,7 @@ const IMAGE_BREAKPOINTS: ImageBreakpoint[] = [
     {
         field: 'tablet_image_path',
         label: 'Tablet Image',
-        hint: '768–1199px wide — shown on tablets (optional, falls back to desktop)',
+        hint: '768–1199px wide — shown on tablets incl. iPad Pro (optional, falls back to desktop)',
         required: false,
         minWidth: 768,
         maxWidth: 1199,
