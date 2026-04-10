@@ -35,6 +35,149 @@ import { FullScreenLoader } from '../../components/ui/FullScreenLoader';
 import { apiFetch } from '../../lib/api';
 import type { Banner, BannerPayload, BannerPlacement, PaginatedResponse } from '../../types/banner';
 
+// ---------------------------------------------------------------------------
+// Image size specs — single source of truth
+// ---------------------------------------------------------------------------
+
+type ImageBreakpoint = {
+    field: 'image_path' | 'tablet_image_path' | 'mobile_image_path';
+    label: string;
+    hint: string;
+    required: boolean;
+    minWidth: number;
+    maxWidth: number | null;
+};
+
+const IMAGE_BREAKPOINTS: ImageBreakpoint[] = [
+    {
+        field: 'image_path',
+        label: 'Desktop Image',
+        hint: 'Min 1200px wide — shown on laptops and larger screens',
+        required: true,
+        minWidth: 1200,
+        maxWidth: null,
+    },
+    {
+        field: 'tablet_image_path',
+        label: 'Tablet Image',
+        hint: '768–1199px wide — shown on tablets (optional, falls back to desktop)',
+        required: false,
+        minWidth: 768,
+        maxWidth: 1199,
+    },
+    {
+        field: 'mobile_image_path',
+        label: 'Mobile Image',
+        hint: 'Max 767px wide — shown on phones (optional, falls back to desktop)',
+        required: false,
+        minWidth: 0,
+        maxWidth: 767,
+    },
+];
+
+// ---------------------------------------------------------------------------
+// ImagePickerWithValidation — reusable single-slot picker with size feedback
+// ---------------------------------------------------------------------------
+
+type ValidationState = 'idle' | 'checking' | 'ok' | 'warn';
+
+type ImagePickerWithValidationProps = {
+    breakpoint: ImageBreakpoint;
+    value: string;
+    onSelect: (url: string) => void;
+};
+
+function ImagePickerWithValidation({ breakpoint, value, onSelect }: ImagePickerWithValidationProps) {
+    const [validation, setValidation] = useState<ValidationState>('idle');
+    const [actualSize, setActualSize] = useState<{ w: number; h: number } | null>(null);
+
+    useEffect(() => {
+        if (!value) {
+            setValidation('idle');
+            setActualSize(null);
+            return;
+        }
+        setValidation('checking');
+        const img = new Image();
+        img.onload = () => {
+            const w = img.naturalWidth;
+            const h = img.naturalHeight;
+            setActualSize({ w, h });
+            const tooNarrow = w < breakpoint.minWidth;
+            const tooWide = breakpoint.maxWidth !== null && w > breakpoint.maxWidth;
+            setValidation(tooNarrow || tooWide ? 'warn' : 'ok');
+        };
+        img.onerror = () => {
+            setValidation('idle');
+            setActualSize(null);
+        };
+        img.src = value;
+    }, [value, breakpoint.minWidth, breakpoint.maxWidth]);
+
+    const badge =
+        validation === 'checking' ? (
+            <span className="text-xs text-muted-foreground">Checking…</span>
+        ) : validation === 'ok' ? (
+            <span className="text-xs font-medium text-green-600">
+                ✓ {actualSize ? `${actualSize.w}×${actualSize.h}` : 'OK'}
+            </span>
+        ) : validation === 'warn' ? (
+            <span className="text-xs font-medium text-amber-600">
+                ⚠ {actualSize ? `${actualSize.w}×${actualSize.h}` : ''} — size outside recommended range
+            </span>
+        ) : null;
+
+    return (
+        <div className="space-y-1.5">
+            <div className="flex items-center justify-between gap-2">
+                <Label>
+                    {breakpoint.label}
+                    {!breakpoint.required && (
+                        <span className="ml-1 text-xs font-normal text-muted-foreground">(optional)</span>
+                    )}
+                </Label>
+                {badge}
+            </div>
+            <p className="text-xs text-muted-foreground">{breakpoint.hint}</p>
+            <MediaPicker
+                value={value}
+                onSelect={onSelect}
+            />
+        </div>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// ResponsiveImageFields — renders all three breakpoint pickers
+// ---------------------------------------------------------------------------
+
+type ResponsiveImageValues = Pick<BannerFormValues, 'image_path' | 'tablet_image_path' | 'mobile_image_path'>;
+
+type ResponsiveImageFieldsProps = {
+    value: ResponsiveImageValues;
+    onChange: (next: ResponsiveImageValues) => void;
+};
+
+function ResponsiveImageFields({ value, onChange }: ResponsiveImageFieldsProps) {
+    return (
+        <div className="space-y-4 rounded-md border p-4">
+            <div className="text-sm font-medium">Responsive Images</div>
+            {IMAGE_BREAKPOINTS.map((bp) => (
+                <ImagePickerWithValidation
+                    key={bp.field}
+                    breakpoint={bp}
+                    value={value[bp.field] ?? ''}
+                    onSelect={(url) => onChange({ ...value, [bp.field]: url || null })}
+                />
+            ))}
+        </div>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Form types + helpers
+// ---------------------------------------------------------------------------
+
 type BannerFormValues = {
     title: string;
     subtitle: string;
@@ -43,6 +186,8 @@ type BannerFormValues = {
     button_text: string;
     action_url: string;
     image_path: string;
+    tablet_image_path: string;
+    mobile_image_path: string;
     placement: string;
     sort_order: number;
     is_active: boolean;
@@ -57,11 +202,34 @@ function toFormValues(item?: Banner): BannerFormValues {
         button_text: item?.button_text ?? '',
         action_url: item?.action_url ?? '',
         image_path: item?.image_path ?? '',
+        tablet_image_path: item?.tablet_image_path ?? '',
+        mobile_image_path: item?.mobile_image_path ?? '',
         placement: item?.placement ?? 'homepage_hero',
         sort_order: item?.sort_order ?? 0,
         is_active: item?.is_active ?? true,
     };
 }
+
+function toPayload(form: BannerFormValues): BannerPayload {
+    return {
+        title: form.title || null,
+        subtitle: form.subtitle || null,
+        description: form.description || null,
+        price_text: form.price_text || null,
+        button_text: form.button_text || null,
+        action_url: form.action_url || null,
+        image_path: form.image_path,
+        tablet_image_path: form.tablet_image_path || null,
+        mobile_image_path: form.mobile_image_path || null,
+        placement: form.placement,
+        sort_order: form.sort_order,
+        is_active: form.is_active,
+    };
+}
+
+// ---------------------------------------------------------------------------
+// BannerForm
+// ---------------------------------------------------------------------------
 
 function BannerForm({
     value,
@@ -174,13 +342,10 @@ function BannerForm({
                 </div>
             </div>
 
-            <div className="space-y-2">
-                <Label>Banner Image</Label>
-                <MediaPicker
-                    value={value.image_path}
-                    onSelect={(url) => onChange({ ...value, image_path: url })}
-                />
-            </div>
+            <ResponsiveImageFields
+                value={value}
+                onChange={(imgs) => onChange({ ...value, ...imgs })}
+            />
 
             <div className="flex items-center gap-3 rounded-md border p-3">
                 <Checkbox
@@ -197,6 +362,10 @@ function BannerForm({
         </div>
     );
 }
+
+// ---------------------------------------------------------------------------
+// Dialogs
+// ---------------------------------------------------------------------------
 
 function CreateBannerDialog({
     onCreate,
@@ -215,18 +384,7 @@ function CreateBannerDialog({
         setSubmitting(true);
         setError(null);
         try {
-            await onCreate({
-                title: form.title || null,
-                subtitle: form.subtitle || null,
-                description: form.description || null,
-                price_text: form.price_text || null,
-                button_text: form.button_text || null,
-                action_url: form.action_url || null,
-                image_path: form.image_path,
-                placement: form.placement,
-                sort_order: form.sort_order,
-                is_active: form.is_active,
-            });
+            await onCreate(toPayload(form));
             setOpen(false);
             setForm(toFormValues());
         } catch (err) {
@@ -299,18 +457,7 @@ function EditBannerDialog({
         setSubmitting(true);
         setError(null);
         try {
-            await onUpdate(banner.id, {
-                title: form.title || null,
-                subtitle: form.subtitle || null,
-                description: form.description || null,
-                price_text: form.price_text || null,
-                button_text: form.button_text || null,
-                action_url: form.action_url || null,
-                image_path: form.image_path,
-                placement: form.placement,
-                sort_order: form.sort_order,
-                is_active: form.is_active,
-            });
+            await onUpdate(banner.id, toPayload(form));
             onOpenChange(false);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to update banner');
@@ -340,6 +487,18 @@ function EditBannerDialog({
                 />
             </form>
         </CrudDialog>
+    );
+}
+
+function BannerImagePreview({ src, label }: { src: string | null; label: string }) {
+    if (!src) return null;
+    return (
+        <div className="space-y-1">
+            <div className="text-xs text-muted-foreground">{label}</div>
+            <div className="h-24 w-full overflow-hidden rounded-md border bg-muted">
+                <img src={src} alt={label} className="h-full w-full object-cover" />
+            </div>
+        </div>
     );
 }
 
@@ -391,15 +550,11 @@ function ViewBannerDialog({
                         {banner.sort_order} / {banner.is_active ? 'Yes' : 'No'}
                     </div>
                 </div>
-                <div>
-                    <div className="text-xs text-muted-foreground">Image</div>
-                    <div className="mt-1 h-32 w-full overflow-hidden rounded-md border bg-muted">
-                        <img
-                            src={banner.image_path}
-                            alt={banner.title || 'Banner image'}
-                            className="h-full w-full object-cover"
-                        />
-                    </div>
+                <div className="space-y-3">
+                    <div className="text-xs text-muted-foreground">Images</div>
+                    <BannerImagePreview src={banner.image_path} label="Desktop" />
+                    <BannerImagePreview src={banner.tablet_image_path} label="Tablet" />
+                    <BannerImagePreview src={banner.mobile_image_path} label="Mobile" />
                 </div>
             </div>
             <DialogFooter
@@ -410,6 +565,10 @@ function ViewBannerDialog({
         </CrudDialog>
     );
 }
+
+// ---------------------------------------------------------------------------
+// BannersPage
+// ---------------------------------------------------------------------------
 
 export function BannersPage() {
     const [items, setItems] = useState<Banner[]>([]);

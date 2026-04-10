@@ -21,6 +21,8 @@ class UpdateBannerRequest extends FormRequest
             'button_text' => ['sometimes', 'nullable', 'string', 'max:255'],
             'action_url' => ['sometimes', 'nullable', 'url', 'max:2048'],
             'image_path' => ['sometimes', 'string', 'max:2048'],
+            'tablet_image_path' => ['sometimes', 'nullable', 'string', 'max:2048'],
+            'mobile_image_path' => ['sometimes', 'nullable', 'string', 'max:2048'],
             'placement' => ['sometimes', 'string', 'max:100', 'exists:banner_placements,key'],
             'sort_order' => ['sometimes', 'nullable', 'integer', 'min:0'],
             'is_active' => ['sometimes', 'boolean'],

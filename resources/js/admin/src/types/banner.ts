@@ -14,6 +14,8 @@ export type Banner = {
     button_text: string | null;
     action_url: string | null;
     image_path: string;
+    tablet_image_path: string | null;
+    mobile_image_path: string | null;
     placement: string;
     sort_order: number;
     is_active: boolean;
@@ -29,6 +31,8 @@ export type BannerPayload = {
     button_text?: string | null;
     action_url?: string | null;
     image_path: string;
+    tablet_image_path?: string | null;
+    mobile_image_path?: string | null;
     placement: string;
     sort_order?: number;
     is_active?: boolean;
